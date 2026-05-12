@@ -1,0 +1,4551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auralis - Premium Ear Training</title>
+    <meta name="description" content="Master your musical ear with note, chord progression, and melody training.">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Tone.js -->
+    <!-- Lucide Icons -->
+    <!-- Styles -->
+    <style>
+:root {
+    /* Color Palette - Premium Dark Mode */
+    --bg-color: #0f1115;
+    --bg-surface: #1a1d24;
+    --bg-surface-hover: #242830;
+    
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-glow: rgba(99, 102, 241, 0.4);
+    
+    --accent: #ec4899;
+    --success: #10b981;
+    --danger: #ef4444;
+
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+
+    /* Typography */
+    --font-main: 'Outfit', system-ui, sans-serif;
+    
+    /* Layout */
+    --sidebar-width: 240px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+
+    /* Transitions */
+    --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    height: 100vh;
+    overflow: hidden;
+}
+
+#app {
+    display: flex;
+    height: 100vh;
+}
+
+/* Chord Explorer Overhaul */
+.chord-explorer .explorer-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: center;
+}
+
+.explorer-controls {
+    display: flex;
+    flex-direction: column;
+}
+
+.string-set-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.explorer-visuals {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+}
+
+/* Welcome Overlay */
+#audio-init-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, rgba(15, 17, 21, 0.9), #000);
+    backdrop-filter: blur(20px);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#audio-init-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.welcome-content {
+    text-align: center;
+    animation: fadeInScale 0.8s ease-out;
+}
+
+.welcome-logo {
+    font-size: 4rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -2px;
+}
+
+.welcome-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 1.25rem 3rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 10px 30px var(--primary-glow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.welcome-btn:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 15px 40px var(--primary-glow);
+}
+
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Premium Select & Checkbox */
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select {
+    width: 100%;
+    background: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 1rem;
+    appearance: none;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.custom-select:hover {
+    border-color: var(--primary);
+}
+
+.string-checkbox-grid {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.string-check-item {
+    cursor: pointer;
+}
+
+.string-checkbox {
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.string-checkbox:checked {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.string-checkbox:checked::after {
+    content: '¹3';
+    color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+}
+
+/* Pulsing Play Button */
+.play-chord-premium {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border: none;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 0 10px rgba(99, 102, 241, 0.1);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.play-chord-premium:hover {
+    transform: scale(1.1);
+    box-shadow: 0 15px 50px rgba(0,0,0,0.6), 0 0 0 15px rgba(99, 102, 241, 0.15);
+}
+
+.play-chord-premium:active {
+    transform: scale(0.95);
+}
+
+.play-chord-premium i {
+    width: 40px;
+    height: 40px;
+}
+
+.play-chord-premium::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 50%;
+    background: inherit;
+    z-index: -1;
+    animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+    0% { transform: scale(1); opacity: 0.8; }
+    70% { transform: scale(1.4); opacity: 0; }
+    100% { transform: scale(1); opacity: 0; }
+}
+
+.formula-display {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.formula-deg {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.formula-badge.altered .formula-deg {
+    color: var(--danger);
+}
+
+.formula-note {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.formula-sep {
+    width: 20px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.staff-container {
+    width: 100%;
+    max-width: 320px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.1), 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.theory-badge {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.theory-badge span {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#degree-text {
+    color: var(--accent);
+    border-color: rgba(236, 72, 153, 0.3);
+}
+
+#chord-type-text {
+    color: var(--primary);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.map-col {
+    flex: 1;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+}
+
+.map-col.active-focus {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--primary);
+    box-shadow: 0 0 20px var(--primary-glow);
+    transform: translateY(-5px);
+}
+
+.map-chord { color: var(--danger); font-weight: 800; font-size: 0.9rem; }
+.map-note { font-size: 1.2rem; font-weight: 900; color: var(--text-main); }
+.map-degree { font-size: 1rem; color: var(--text-muted); font-weight: 700; }
+.map-intervals { display: flex; flex-direction: column; font-size: 0.75rem; color: var(--text-muted); }
+.map-roman { font-family: serif; font-style: italic; color: var(--primary); font-weight: 700; }
+
+@media (max-width: 768px) {
+    .chord-explorer .explorer-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Footer & Nav */
+#sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--bg-surface);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+    z-index: 10;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 2rem;
+    letter-spacing: -0.5px;
+}
+
+.logo i {
+    color: var(--primary);
+    width: 24px;
+    height: 24px;
+}
+
+.nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.nav-links::-webkit-scrollbar { width: 4px; }
+.nav-links::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+.nav-category {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--primary-glow);
+    font-weight: 800;
+    margin-top: 1.2rem;
+    margin-bottom: 0.4rem;
+    padding-left: 0.5rem;
+    opacity: 0.8;
+}
+
+.nav-category:first-child {
+    margin-top: 0;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: var(--transition);
+    text-align: left;
+}
+
+.nav-btn:hover {
+    background-color: var(--bg-surface-hover);
+    color: var(--text-main);
+    transform: translateX(4px);
+}
+
+.nav-btn.active {
+    background-color: var(--primary);
+    color: white;
+    box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.global-settings {
+    margin-top: auto;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.global-settings label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.global-settings select {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    outline: none;
+    transition: var(--transition);
+}
+
+.global-settings select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+/* Main Content */
+#main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 2rem;
+    position: relative;
+    overflow-y: auto;
+}
+
+header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+}
+
+h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+header p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    align-self: flex-start;
+    margin-top: 1rem;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    box-shadow: 0 4px 20px var(--primary-glow);
+    transform: translateY(-2px);
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* View Container - where specific mode logic goes */
+#view-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    flex-grow: 1;
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.control-card {
+    background: var(--bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.control-card:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--primary);
+    transform: translateY(-4px);
+}
+
+.control-card.selected {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--primary);
+    box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.play-action-btn {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border: none;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(236, 72, 153, 0.4);
+    transition: var(--transition);
+    margin: 2rem auto;
+}
+
+.play-action-btn i {
+    width: 32px;
+    height: 32px;
+}
+
+.play-action-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 30px rgba(236, 72, 153, 0.6);
+}
+
+.play-action-btn:active {
+    transform: scale(0.95);
+}
+
+/* Answer Options */
+.answers-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.answer-btn {
+    background: var(--bg-surface);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.answer-btn:hover {
+    background: var(--bg-surface-hover);
+    transform: translateY(-2px);
+}
+
+.answer-btn.correct {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+.answer-btn.wrong {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.answer-btn.active-select {
+    background: rgba(99, 102, 241, 0.2) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 15px var(--primary-glow);
+    transform: scale(1.05);
+}
+
+/* Preview Button */
+.preview-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.preview-btn:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+    transform: scale(1.05);
+}
+
+.preview-btn:active {
+    transform: scale(0.95);
+}
+
+/* Status text */
+#status-message {
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: 600;
+    min-height: 2rem;
+    margin-top: 1rem;
+}
+
+.status-correct { color: var(--success); }
+.status-wrong { color: var(--danger); }
+
+/* Progressions mode Specifics */
+.progression-slot {
+    background: var(--bg-surface);
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    min-width: 80px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progression-container {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+/* Hidden Utility */
+.hidden {
+    display: none !important;
+}
+
+/* Fretboard Styles */
+#fretboard-wrapper {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}
+
+#fretboard-wrapper h3 {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.fretboard-neck {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background-color: #2c1e16; /* Dark wood */
+    border: 2px solid #1a110c;
+    border-radius: 4px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    overflow: hidden;
+}
+
+.string, .string-row {
+    display: flex;
+    position: relative;
+    height: 38px;
+    background: transparent;
+    align-items: stretch;
+}
+
+.string::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(to bottom, #d4d4d4, #888, #d4d4d4);
+    transform: translateY(-50%);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    z-index: 1;
+}
+
+.string-0::after { height: 1px; } /* high E */
+.string-1::after { height: 1.5px; }
+.string-2::after { height: 2px; }
+.string-3::after { height: 2.5px; }
+.string-4::after { height: 3px; }
+.string-5::after { height: 3.5px; } /* low E */
+
+.fret {
+    flex: 1;
+    border-right: 2px solid #555;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+    box-sizing: border-box;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.fret.nut {
+    border-right: 8px solid #aaa;
+    flex: 0.5;
+    background: rgba(0,0,0,0.3);
+    box-sizing: border-box;
+}
+
+.inlay-dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    z-index: 0;
+    pointer-events: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.fret:last-child {
+    border-right: none;
+}
+
+.note-marker {
+    z-index: 2;
+    background: var(--primary);
+    color: white;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    box-shadow: 0 0 8px var(--primary-glow);
+    transition: all 0.2s ease;
+    pointer-events: none; /* Ensure markers don't intercept fret clicks */
+}
+
+.note-marker.active {
+    transform: scale(1.2);
+}
+
+.note-marker.midi-user {
+    background: #06b6d4; /* Cyan 500 */
+    color: white;
+    box-shadow: 0 0 15px #22d3ee;
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+/* Generic Root Style (All R's) - Now RED as requested */
+.note-marker.root-marker {
+    background: #ef4444 !important;
+    color: #fff !important;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.5) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    opacity: 0.8 !important;
+    transform: scale(1.0);
+}
+
+/* THE TARGET ROOT (The chosen one) */
+.note-marker.root-marker.target-root {
+    background: #facc15 !important; /* Bright Yellow/Gold */
+    color: #000 !important; /* Black text for contrast */
+    box-shadow: 0 0 30px #facc15, 0 0 60px rgba(250, 204, 21, 0.4) !important;
+    border: 3px solid #fff !important;
+    opacity: 1 !important;
+    z-index: 1000 !important;
+    transform: scale(1.6) !important;
+    animation: target-pulse 1s infinite alternate !important;
+}
+
+.fret.target-root-fret {
+    background: rgba(250, 204, 21, 0.25) !important;
+    box-shadow: inset 0 0 0 3px rgba(250, 204, 21, 0.8), inset 0 0 20px rgba(250, 204, 21, 0.4) !important;
+    z-index: 5;
+}
+
+@keyframes target-pulse {
+    0% { transform: scale(1.4); box-shadow: 0 0 20px #facc15; }
+    100% { transform: scale(1.8); box-shadow: 0 0 45px #facc15, 0 0 80px rgba(250, 204, 21, 0.5); }
+}
+
+.fret.correct-target {
+    background: rgba(16, 185, 129, 0.2) !important;
+}
+
+.fret.wrong-target {
+    background: rgba(239, 68, 68, 0.2) !important;
+}
+
+.note-marker.hidden {
+    display: none;
+}
+
+.fret-markers-row {
+    display: flex;
+    height: 20px;
+    background: transparent;
+}
+
+.fret-marker-label {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+}
+
+.fret-marker-label:first-child {
+    flex: 0.5;
+}
+
+/* ==========================================================================
+   MODE 7: HARMONY BUILDER STYLES
+   ========================================================================== */
+
+/* Harmony Builder - Professional Redesign */
+.builder-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    padding-bottom: 2rem;
+}
+
+/* 1. Dashboard: Slim Top Bar */
+.builder-dashboard {
+    display: flex;
+    justify-content: center;
+    padding: 0.8rem 1.5rem;
+    border-radius: 100px; /* Pill shape */
+    background: rgba(139, 92, 246, 0.03);
+    border: 1px solid rgba(139, 92, 246, 0.1);
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-main {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.chord-info-pill {
+    text-align: center;
+    min-width: 250px;
+}
+
+.chord-name-compact {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--primary-glow);
+    text-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+    letter-spacing: -0.02em;
+}
+
+.chord-details-compact {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: -2px;
+}
+
+.dashboard-visualizer {
+    width: 80px;
+    height: 80px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* 2. Action Pill Bar: Floating Controls */
+.action-pill-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: -0.5rem;
+}
+
+.action-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-light);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pill-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 1.4rem;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pill-btn.primary {
+    background: var(--primary-glow);
+    border-color: var(--primary-glow);
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    color: white;
+}
+
+.pill-btn.primary:disabled {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: transparent;
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.pill-btn.secondary {
+    background: var(--secondary-glow);
+    border-color: var(--secondary-glow);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    color: white;
+}
+
+.pill-btn.outline {
+    background: transparent;
+}
+
+.pill-btn.outline:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.pill-btn.outline.active {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: var(--secondary-glow);
+    color: var(--secondary-glow);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.pill-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 0.5rem;
+}
+
+/* 3. Fretboard: Large & Prominent */
+.builder-fretboard-large {
+    padding: 2rem 1rem;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* 4. Quick Selector: Compact & Tidy */
+.quick-selector-grid {
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.selector-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.section-label {
+    min-width: 100px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    padding-top: 0.5rem;
+}
+
+.compact-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    flex: 1;
+}
+
+.mini-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: var(--text-muted);
+    transition: all 0.2s;
+}
+
+.mini-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+}
+
+.mini-btn.active {
+    background: var(--primary-glow);
+    border-color: var(--primary-glow);
+    color: white;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.combo-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    flex: 1;
+}
+
+.type-scroll {
+    max-height: 80px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.type-scroll::-webkit-scrollbar { width: 4px; }
+.type-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+.btn-ghost-small {
+    align-self: flex-end;
+    background: transparent;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: var(--primary-glow);
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-ghost-small:hover {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: var(--primary-glow);
+}
+
+/* 5. Timeline: Compact Scroll */
+.progression-timeline-compact {
+    padding: 1rem;
+}
+
+.timeline-header-slim {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+}
+
+.timeline-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.progression-horizontal-scroll {
+    display: flex;
+    gap: 0.8rem;
+    overflow-x: auto;
+    padding-bottom: 0.8rem;
+    min-height: 80px;
+}
+
+.progression-horizontal-scroll .empty-msg {
+    width: 100%;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-style: italic;
+    padding: 1rem;
+}
+
+/* Fret States Refined */
+.fret.candidate { background: rgba(139, 92, 246, 0.08) !important; border-color: rgba(139, 92, 246, 0.4) !important; }
+.fret.candidate .note-marker { 
+    display: flex !important; 
+    background: transparent !important; 
+    border: 2px solid rgba(167, 139, 250, 0.9) !important; /* Bright purple border */
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.6) !important; 
+    opacity: 1 !important; 
+    box-sizing: border-box;
+}
+.fret.selected { border-color: var(--primary-glow) !important; background: rgba(139, 92, 246, 0.25) !important; }
+.fret.selected .note-marker { 
+    display: flex !important; 
+    background: var(--primary-glow) !important; 
+    border: 2px solid #fff !important; 
+    box-shadow: 0 0 15px var(--primary-glow), 0 0 30px var(--primary-glow) !important; 
+    opacity: 1 !important; 
+    transform: scale(1.2);
+    box-sizing: border-box;
+}
+.fret.dimmed { opacity: 0.35 !important; filter: none !important; } /* Removed blur for a cleaner look */
+.fret.playback-highlight { border-color: var(--secondary-glow) !important; background: rgba(16, 185, 129, 0.15) !important; }
+.fret.playback-highlight .note-marker { display: flex !important; background: var(--secondary-glow) !important; box-shadow: 0 0 15px var(--secondary-glow) !important; opacity: 1 !important; }
+
+/* Chord Card Compact */
+.chord-card {
+    min-width: 110px;
+    padding: 0.6rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    text-align: center;
+    position: relative;
+}
+
+.chord-card .card-name { font-size: 1rem; font-weight: 700; color: var(--text-light); }
+.chord-card .card-details { font-size: 0.6rem; color: var(--text-muted); }
+.chord-card .card-index { position: absolute; top: 4px; left: 4px; font-size: 0.6rem; color: var(--text-muted); opacity: 0.5; }
+.chord-card .card-actions { display: flex; justify-content: center; gap: 0.4rem; margin-top: 0.4rem; opacity: 0; }
+.chord-card:hover .card-actions { opacity: 1; }
+.chord-card.active-play { border-color: var(--secondary-glow); box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+
+/* ==========================================================================
+   MODE 8: CAGED SYSTEM MASTER STYLES
+   ========================================================================== */
+
+.caged-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-bottom: 2rem;
+}
+
+.caged-dashboard {
+    justify-content: center;
+}
+
+.caged-controls {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.caged-tabs {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.caged-tab {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.caged-tab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+}
+
+.caged-tab.active {
+    background: var(--primary-glow);
+    border-color: var(--primary-glow);
+    color: white;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+}
+
+/* Fret States for CAGED */
+.fret.caged-root {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: var(--secondary-glow) !important;
+}
+
+.fret.caged-root .caged-root-marker {
+    display: flex !important;
+    background: var(--secondary-glow) !important;
+    border: 2px solid #fff;
+    box-shadow: 0 0 15px var(--secondary-glow), 0 0 30px var(--secondary-glow) !important;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.75rem;
+    width: 20px;
+    height: 20px;
+}
+
+.fret.caged-chord-tone {
+    background: rgba(139, 92, 246, 0.1) !important;
+    border-color: rgba(139, 92, 246, 0.3) !important;
+}
+
+.fret.caged-chord-tone .caged-chord-tone-marker {
+    display: flex !important;
+    background: transparent !important;
+    border: 2px solid rgba(167, 139, 250, 0.9);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.4) !important;
+    color: rgba(167, 139, 250, 0.9);
+    font-weight: 700;
+    font-size: 0.7rem;
+    width: 18px;
+    height: 18px;
+}
+
+</style>
+</head>
+<body>
+    <div id="error-display" style="display: none; position: fixed; top: 0; left: 0; width: 100%; background: rgba(220, 38, 38, 0.95); color: white; z-index: 10000; padding: 15px; font-family: monospace; font-size: 12px; max-height: 30vh; overflow-y: auto; border-bottom: 2px solid white;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+            <strong>System Error</strong>
+            <button onclick="this.parentElement.parentElement.style.display='none'" style="background: white; color: red; border: none; padding: 2px 8px; cursor: pointer; border-radius: 4px;">Close</button>
+        </div>
+        <div id="error-content"></div>
+    </div>
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const display = document.getElementById('error-display');
+            const content = document.getElementById('error-content');
+            if (display && content) {
+                display.style.display = 'block';
+                content.innerText += msg + ' (Line: ' + lineNo + ')\n';
+            }
+            return false;
+        };
+    </script>
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <nav id="sidebar">
+            <div class="logo">
+                <i data-lucide="headphones"></i>
+                <span>Auralis</span>
+            </div>
+            
+            <div class="nav-links">
+                <div class="nav-category">Ear Training</div>
+                <button class="nav-btn active" data-mode="mode1">
+                    <i data-lucide="music"></i>
+                    <span>Note Mastery</span>
+                </button>
+                <button class="nav-btn" data-mode="mode2">
+                    <i data-lucide="layers"></i>
+                    <span>Chord Progressions</span>
+                </button>
+                <button class="nav-btn" data-mode="mode3">
+                    <i data-lucide="activity"></i>
+                    <span>Relative Melody</span>
+                </button>
+                <button class="nav-btn" data-mode="mode4">
+                    <i data-lucide="music"></i>
+                    <span>Melody & Chords</span>
+                </button>
+
+                <div class="nav-category">Learning & Theory</div>
+                <button class="nav-btn" data-mode="mode5">
+                    <i data-lucide="book-open"></i>
+                    <span>Chord Explorer</span>
+                </button>
+                <button class="nav-btn" data-mode="mode6">
+                    <i data-lucide="grid"></i>
+                    <span>Fretboard Geometry</span>
+                </button>
+                <button class="nav-btn" data-mode="mode7">
+                    <i data-lucide="blocks"></i>
+                    <span>Harmony Builder</span>
+                </button>
+                <button class="nav-btn" data-mode="mode8">
+                    <i data-lucide="link"></i>
+                    <span>CAGED Master</span>
+                </button>
+            </div>
+
+            <div class="global-settings">
+                <label for="key-selector">Global Key</label>
+                <select id="key-selector">
+                    <option value="C">C Major</option>
+                    <option value="Db">Db Major</option>
+                    <option value="D">D Major</option>
+                    <option value="Eb">Eb Major</option>
+                    <option value="E">E Major</option>
+                    <option value="F">F Major</option>
+                    <option value="Gb">Gb Major</option>
+                    <option value="G">G Major</option>
+                    <option value="Ab">Ab Major</option>
+                    <option value="A">A Major</option>
+                    <option value="Bb">Bb Major</option>
+                    <option value="B">B Major</option>
+                </select>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <header>
+                <h1 id="view-title">Note Mastery</h1>
+                <p id="view-description">Identify the note or chord being played.</p>
+                <div id="midi-status" class="midi-status-pill">
+                    <i data-lucide="usb"></i>
+                    <span id="midi-status-text">MIDI: Checking...</span>
+                </div>
+            </header>
+
+            <div id="view-container">
+                <!-- Content will be injected here by app.js -->
+            </div>
+
+            <!-- Global Audio Feedback / Keyboard -->
+            <div id="piano-container">
+                <!-- Interactive Piano will be rendered here -->
+            </div>
+        <div id="fretboard-container"></div>
+    </main>
+</div>
+
+    <!-- Scripts -->
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script>
+    try {
+        
+// --- js/musicTheory.js ---
+// js/musicTheory.js
+
+var NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+// Map of key to integer
+var NOTE_TO_INT = Object.fromEntries(NOTES.map((note, index) => [note, index]));
+
+// Major scale intervals (W, W, H, W, W, W, H) -> cumulative semitones
+var MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11];
+
+// Minor scale intervals
+var MINOR_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10];
+
+var CHORD_FORMULAS = {
+    'Major': [0, 4, 7],
+    'Minor': [0, 3, 7],
+    'Diminished': [0, 3, 6],
+    'Augmented': [0, 4, 8],
+    'Sus4': [0, 5, 7],
+    'Sus2': [0, 2, 7],
+    'Maj7': [0, 4, 7, 11],
+    'Min7': [0, 3, 7, 10],
+    'Dom7': [0, 4, 7, 10],
+    'Dim7': [0, 3, 6, 9],
+    'HalfDim7': [0, 3, 6, 10],
+    'm7b5': [0, 3, 6, 10],
+    '6': [0, 4, 7, 9],
+    'm6': [0, 3, 7, 9],
+    'add9': [0, 4, 7, 14],
+    '9': [0, 4, 7, 10, 14],
+    'Maj9': [0, 4, 7, 11, 14],
+    'Min9': [0, 3, 7, 10, 14],
+    'Dom9': [0, 4, 7, 10, 14]
+};
+
+var INTERVAL_NAMES = {
+    1: 'Minor 2nd',
+    2: 'Major 2nd',
+    3: 'Minor 3rd',
+    4: 'Major 3rd',
+    5: 'Perfect 4th',
+    6: 'Tritone',
+    7: 'Perfect 5th',
+    8: 'Minor 6th',
+    9: 'Major 6th',
+    10: 'Minor 7th',
+    11: 'Major 7th',
+    12: 'Octave'
+};
+
+// Diatonic Chords for a Major Key (triads)
+// I, ii, iii, IV, V, vi, vii°
+var MAJOR_DIATONIC_CHORDS = [
+    { degree: 1, type: 'Major', suffix: '' },
+    { degree: 2, type: 'Minor', suffix: 'm' },
+    { degree: 3, type: 'Minor', suffix: 'm' },
+    { degree: 4, type: 'Major', suffix: '' },
+    { degree: 5, type: 'Major', suffix: '' },
+    { degree: 6, type: 'Minor', suffix: 'm' },
+    { degree: 7, type: 'Diminished', suffix: 'dim' }
+];
+
+var ADVANCED_CHORDS_POOL = [
+    { degree: 1, type: 'Maj7', suffix: 'maj7' },
+    { degree: 2, type: 'Min7', suffix: 'm7' },
+    { degree: 3, type: 'Min7', suffix: 'm7' },
+    { degree: 4, type: 'Maj7', suffix: 'maj7' },
+    { degree: 5, type: 'Dom7', suffix: '7' },
+    { degree: 6, type: 'Min7', suffix: 'm7' },
+    { degree: 7, type: 'HalfDim7', suffix: 'm7b5' },
+    { degree: 5, type: 'Dom9', suffix: '9' },
+    { degree: 1, type: 'Maj9', suffix: 'maj9' },
+    { degree: 2, type: 'Min9', suffix: 'm9' },
+    { degree: 3, type: 'Augmented', suffix: 'aug' },
+    { degree: 7, type: 'Dim7', suffix: 'dim7' }
+];
+
+/**
+ * Gets the absolute note name for a given semitone offset from C.
+ */
+function getNoteName(semitoneOffset) {
+    let normalized = ((semitoneOffset % 12) + 12) % 12; // Handle negatives
+    return NOTES[normalized];
+}
+
+/**
+ * Converts a note string (e.g. 'C4', 'Eb3') to MIDI note number
+ */
+function noteToMidi(noteStr) {
+    const match = noteStr.match(/^([A-Ga-g][b#]?)(\d)$/);
+    if (!match) return null;
+    const name = match[1];
+    const oct = parseInt(match[2], 10);
+    let intVal = NOTE_TO_INT[name];
+    if (intVal === undefined) {
+        // handle enharmonics if needed, but our internal notes are flat-based
+        if (name === 'C#') intVal = 1;
+        if (name === 'D#') intVal = 3;
+        if (name === 'F#') intVal = 6;
+        if (name === 'G#') intVal = 8;
+        if (name === 'A#') intVal = 10;
+    }
+    return (oct + 1) * 12 + intVal;
+}
+
+/**
+ * Generate a scale given a root note and intervals.
+ */
+function getScale(rootNote, octave = 4, intervals = MAJOR_SCALE_INTERVALS) {
+    const rootInt = NOTE_TO_INT[rootNote];
+    return intervals.map(interval => {
+        const absoluteInt = rootInt + interval;
+        const noteName = getNoteName(absoluteInt);
+        const oct = octave + Math.floor(absoluteInt / 12);
+        return `${noteName}${oct}`;
+    });
+}
+
+/**
+ * Get notes for a specific chord
+ * @param {string} rootNote e.g. 'C'
+ * @param {string} type e.g. 'Major'
+ * @param {number} octave e.g. 4
+ */
+function getChordNotes(rootNote, type, octave = 4) {
+    const rootInt = NOTE_TO_INT[rootNote];
+    const formula = CHORD_FORMULAS[type] || CHORD_FORMULAS['Major'];
+    
+    return formula.map(interval => {
+        const absoluteInt = rootInt + interval;
+        const noteName = getNoteName(absoluteInt);
+        const oct = octave + Math.floor(absoluteInt / 12);
+        return `${noteName}${oct}`;
+    });
+}
+
+/**
+ * Pick a random element from an array
+ */
+function pickRandom(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+/**
+ * Shuffle an array
+ */
+function shuffle(array) {
+    let currentIndex = array.length,  randomIndex;
+    while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [
+        array[randomIndex], array[currentIndex]];
+    }
+    return array;
+}
+
+/**
+ * Returns a map of { noteName: degreeString } for the current key
+ * e.g. { 'C': '1', 'D': '2', ... }
+ */
+function getDegreeLabelMap(rootNote) {
+    const scaleNotes = getScale(rootNote);
+    const map = {};
+    scaleNotes.forEach((fullNote, idx) => {
+        const noteName = fullNote.match(/^[A-Ga-g][b#]?/)[0];
+        map[noteName] = (idx + 1).toString();
+    });
+    return map;
+}
+
+/**
+ * Returns chord formula degrees for a given type
+ */
+function getChordFormula(type) {
+    switch (type) {
+        case 'Major': return ['1', '3', '5'];
+        case 'Minor': return ['1', 'b3', '5'];
+        case 'Diminished': return ['1', 'b3', 'b5'];
+        case 'Augmented': return ['1', '3', '#5'];
+        default: return ['1', '3', '5'];
+    }
+}
+/**
+ * Identifies a chord from a set of MIDI notes.
+ * @param {Array<number>} midis - Array of MIDI note numbers.
+ * @returns {Object|null} - { root: string, type: string, name: string } or null
+ */
+function identifyChord(midis) {
+    if (!midis || midis.length === 0) return null;
+
+    // Get unique pitch classes (0-11)
+    const pitchClasses = [...new Set(midis.map(m => m % 12))].sort((a, b) => a - b);
+    
+    // Dictionary of patterns (sorted for comparison)
+    const chordFormulas = {
+        'Major': [0, 4, 7],
+        'Minor': [0, 3, 7],
+        'Diminished': [0, 3, 6],
+        'Augmented': [0, 4, 8],
+        'Sus4': [0, 5, 7],
+        'Sus2': [0, 2, 7],
+        'Dom7': [0, 4, 7, 10],
+        'Maj7': [0, 4, 7, 11],
+        'Min7': [0, 3, 7, 10],
+        'Dim7': [0, 3, 6, 9],
+        'm7b5': [0, 3, 6, 10],
+        '6': [0, 4, 7, 9],
+        'm6': [0, 3, 7, 9],
+        'add9': [0, 4, 7, 14],
+        '9': [0, 4, 7, 10, 14],
+        'Maj9': [0, 4, 7, 11, 14],
+        'Min9': [0, 3, 7, 10, 14]
+    };
+
+    // Try each pitch as a root
+    for (let rootPC of pitchClasses) {
+        // Calculate intervals from this root
+        const intervals = pitchClasses.map(pc => (pc - rootPC + 12) % 12).sort((a, b) => a - b);
+        
+        for (const [type, formula] of Object.entries(chordFormulas)) {
+            const normalizedFormula = formula.map(f => f % 12).sort((a, b) => a - b);
+            
+            // Check if intervals match formula
+            if (JSON.stringify(intervals) === JSON.stringify(normalizedFormula)) {
+                const rootName = getNoteName(rootPC);
+                const suffix = getChordSuffix(type);
+                return {
+                    root: rootName,
+                    type: type,
+                    name: `${rootName}${suffix}`
+                };
+            }
+        }
+    }
+
+    // Special case for Power Chords
+    for (let rootPC of pitchClasses) {
+        const intervals = pitchClasses.map(pc => (pc - rootPC + 12) % 12).sort((a, b) => a - b);
+        if (JSON.stringify(intervals) === JSON.stringify([0, 7])) {
+            const rootName = getNoteName(rootPC);
+            return { root: rootName, type: 'Power', name: `${rootName}5` };
+        }
+    }
+
+    return { root: '', type: 'Unknown', name: 'Cluster' };
+}
+
+function getChordSuffix(type) {
+    const suffixes = {
+        'Major': '',
+        'Minor': 'm',
+        'Diminished': 'dim',
+        'Augmented': 'aug',
+        'Sus4': 'sus4',
+        'Sus2': 'sus2',
+        'Maj7': 'maj7',
+        'Min7': 'm7',
+        'Dom7': '7',
+        'Dim7': 'dim7',
+        'm7b5': 'm7b5',
+        '6': '6',
+        'm6': 'm6',
+        'add9': 'add9',
+        'Maj9': 'maj9',
+        'Min9': 'm9',
+        '9': '9'
+    };
+    return suffixes[type] || '';
+}
+
+// --- js/audioEngine.js ---
+// js/audioEngine.js
+
+var isInitialized = false;
+var polySynth;
+var monoSynth;
+var masterVolume;
+
+async function initAudio() {
+    if (isInitialized) return true;
+
+    try {
+        await Tone.start();
+        
+        // Optimization for Low Latency (Safely applied after start)
+        try {
+            Tone.context.latencyHint = 'fastest';
+            Tone.context.lookAhead = 0.01; // Slightly safer than 0
+        } catch (optErr) {
+            console.warn("Could not set low-latency optimizations:", optErr);
+        }
+
+        // Master Volume and Compressor for premium sound quality
+        masterVolume = new Tone.Volume(-8).toDestination();
+        const compressor = new Tone.Compressor(-30, 3);
+        compressor.connect(masterVolume);
+
+        // Reverb to make it sound natural but not muddy
+        const reverb = new Tone.Reverb({
+            decay: 1.0,
+            preDelay: 0.05,
+            wet: 0.15
+        }).connect(compressor);
+
+        // Piano Sampler - Optimized: Connect directly to destination for zero-latency path
+        // (Reverb/Compressor can add small processing delays)
+        polySynth = new Tone.Sampler({
+            urls: {
+                A0: "A0.mp3", C1: "C1.mp3", "D#1": "Ds1.mp3", "F#1": "Fs1.mp3",
+                A1: "A1.mp3", C2: "C2.mp3", "D#2": "Ds2.mp3", "F#2": "Fs2.mp3",
+                A2: "A2.mp3", C3: "C3.mp3", "D#3": "Ds3.mp3", "F#3": "Fs3.mp3",
+                A3: "A3.mp3", C4: "C4.mp3", "D#4": "Ds4.mp3", "F#4": "Fs4.mp3",
+                A4: "A4.mp3", C5: "C5.mp3", "D#5": "Ds5.mp3", "F#5": "Fs5.mp3",
+                A5: "A5.mp3", C6: "C6.mp3", "D#6": "Ds6.mp3", "F#6": "Fs6.mp3",
+                A6: "A6.mp3", C7: "C7.mp3", "D#7": "Ds7.mp3", "F#7": "Fs7.mp3",
+                A7: "A7.mp3", C8: "C8.mp3"
+            },
+            release: 1,
+            baseUrl: "https://tonejs.github.io/audio/salamander/"
+        }).toDestination(); // Direct to output for minimum latency
+
+        // MonoSynth for melodies (also switched to piano-like settings or keep for contrast)
+        monoSynth = polySynth; // Reuse sampler for mono notes as well
+
+        // Bass remains a bit punchier but using the piano low-end is usually better
+        bassSynth = polySynth; 
+
+        // Wait for reverb to generate impulse
+        await reverb.generate();
+
+        Tone.Transport.bpm.value = 90;
+        isInitialized = true;
+        return true;
+    } catch (e) {
+        console.error("Failed to start audio context:", e);
+        return false;
+    }
+}
+
+var bassSynth;
+
+var playbackTimeouts = [];
+
+function clearAllTimeouts() {
+    playbackTimeouts.forEach(clearTimeout);
+    playbackTimeouts = [];
+}
+
+/**
+ * Play a single note
+ */
+function playNote(note, duration = '4n', time) {
+    if (!isInitialized) return;
+    const processedNote = typeof note === 'number' ? Tone.Frequency(note, "midi").toFrequency() : note;
+    monoSynth.triggerAttackRelease(processedNote, duration, time !== undefined ? time : Tone.now());
+}
+
+/**
+ * Play a chord
+ */
+function playChord(notes, duration = '2n', time) {
+    if (!isInitialized) return;
+    // Ensure all notes are converted to frequency if they are MIDI numbers
+    const processedNotes = notes.map(n => typeof n === 'number' ? Tone.Frequency(n, "midi").toFrequency() : n);
+    polySynth.triggerAttackRelease(processedNotes, duration, time !== undefined ? time : Tone.now());
+}
+
+function playMidiNoteOn(midiNumber, velocity = 0.7) {
+    if (!isInitialized) return;
+    const freq = Tone.Frequency(midiNumber, "midi").toFrequency();
+    // Use "+0" to trigger as soon as possible in the current block
+    polySynth.triggerAttack(freq, "+0", velocity);
+}
+
+function playMidiNoteOff(midiNumber) {
+    if (!isInitialized) return;
+    const freq = Tone.Frequency(midiNumber, "midi").toFrequency();
+    polySynth.triggerRelease(freq, Tone.now());
+}
+
+/**
+ * Play a sequence of chords (Progression)
+ * @param {Array<Array<string>>} progression Array of chords (each chord is an array of notes)
+ * @param {number} bpm
+ */
+async function playProgression(progression, bpm = 90) {
+    if (!isInitialized) return;
+
+    stopAll();
+
+    const beatDuration = 60 / bpm;
+    const msPerChord = beatDuration * 2 * 1000;
+
+    progression.forEach((chordNotes, index) => {
+        const t = setTimeout(() => {
+            playChord(chordNotes, '2n');
+        }, index * msPerChord);
+        playbackTimeouts.push(t);
+    });
+}
+
+/**
+ * Play a melody sequence
+ * @param {Array<string>} melody Array of note strings
+ * @param {number} bpm
+ */
+function playMelody(melody, bpm = 120) {
+    if (!isInitialized) return;
+
+    stopAll();
+
+    const beatDuration = 60 / bpm;
+    const msPerNote = beatDuration * 1000;
+
+    melody.forEach((note, index) => {
+        const t = setTimeout(() => {
+            playNote(note, '8n');
+        }, index * msPerNote);
+        playbackTimeouts.push(t);
+    });
+}
+
+/**
+ * Stop all playing synths immediately
+ */
+function stopAll() {
+    if (!isInitialized) return;
+
+    clearAllTimeouts();
+    if (window.highlightTimeouts) {
+        window.highlightTimeouts.forEach(clearTimeout);
+        window.highlightTimeouts = [];
+    }
+
+    Tone.Transport.stop();
+    Tone.Transport.cancel(0);
+    try {
+        polySynth.releaseAll();
+        monoSynth.triggerRelease();
+        bassSynth.triggerRelease();
+    } catch (e) {
+        // safely ignore release errors
+    }
+}
+
+// --- js/fretboard.js ---
+// js/fretboard.js
+
+
+// Standard E tuning (low to high): E2, A2, D3, G3, B3, E4
+// MIDI values: E2=40, A2=45, D3=50, G3=55, B3=59, E4=64
+var TUNING = [64, 59, 55, 50, 45, 40]; 
+var NUM_FRETS = 15;
+
+function initFretboard(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    let html = '<div class="fretboard-neck">';
+    
+    // Create strings
+    TUNING.forEach((stringBaseMidi, stringIdx) => {
+        html += `<div class="string string-${stringIdx}">`;
+        
+        // Create frets
+        for (let fret = 0; fret <= NUM_FRETS; fret++) {
+            const midiNote = stringBaseMidi + fret;
+            const noteName = getNoteName(midiNote);
+            const isNut = fret === 0;
+            
+            // Inlay dots logic (usually on strings 2 and 3 or middle)
+            // We'll put them on stringIdx 2 (3rd string)
+            let inlayHtml = '';
+            if (stringIdx === 2 && !isNut) {
+                if ([3, 5, 7, 9, 15].includes(fret)) {
+                    inlayHtml = '<div class="inlay-dot"></div>';
+                }
+            } else if (stringIdx === 1 && fret === 12) {
+                 inlayHtml = '<div class="inlay-dot"></div>';
+            } else if (stringIdx === 3 && fret === 12) {
+                 inlayHtml = '<div class="inlay-dot"></div>';
+            }
+
+            html += `
+                <div class="fret ${isNut ? 'nut' : ''}" data-midi="${midiNote}" data-note="${noteName}" data-fret="${fret}">
+                    ${inlayHtml}
+                    <div class="note-marker hidden"></div>
+                </div>
+            `;
+        }
+        
+        html += `</div>`;
+    });
+
+    // Fret markers (3, 5, 7, 9, 12, 15)
+    html += '<div class="fret-markers-row">';
+    for (let fret = 0; fret <= NUM_FRETS; fret++) {
+        let marker = '';
+        if ([3, 5, 7, 9, 15].includes(fret)) marker = '•';
+        if (fret === 12) marker = '••';
+        html += `<div class="fret-marker-label">${marker}</div>`;
+    }
+    html += '</div>';
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function clearFretboard() {
+    const markers = document.querySelectorAll('.fretboard-neck .note-marker');
+    markers.forEach(m => {
+        m.classList.add('hidden');
+        m.classList.remove('active');
+        m.textContent = '';
+    });
+}
+
+function highlightNotesOnFretboard(notesArray, labelsMap = null, stringFilter = null) {
+    clearFretboard();
+    
+    notesArray.forEach(noteStr => {
+        const noteName = noteStr.match(/^[A-Ga-g][b#]?/)[0];
+        const displayLabel = (labelsMap && labelsMap[noteName]) ? labelsMap[noteName] : noteName;
+
+        // Find all fret cells that match this note name
+        const fretCells = document.querySelectorAll(`.fret[data-note="${noteName}"]`);
+        fretCells.forEach(cell => {
+            // Check string filter if provided
+            if (stringFilter) {
+                const parentString = cell.closest('.string');
+                if (parentString) {
+                    const stringIdx = parseInt(parentString.className.match(/string-(\d+)/)[1]);
+                    if (!stringFilter.includes(stringIdx)) return;
+                }
+            }
+
+            const marker = cell.querySelector('.note-marker');
+            if (marker) {
+                marker.textContent = displayLabel;
+                marker.classList.remove('hidden');
+                marker.classList.add('active');
+            }
+        });
+    });
+}
+
+function showMidiNoteOn(midiNumber, stringIdx = null) {
+    let selector = `.fret[data-midi="${midiNumber}"]`;
+    if (stringIdx !== null) {
+        selector = `.string-${stringIdx} .fret[data-midi="${midiNumber}"]`;
+    }
+    
+    const fretCells = document.querySelectorAll(selector);
+    fretCells.forEach(cell => {
+        const marker = cell.querySelector('.note-marker');
+        if (marker) {
+            // Store current label if it's an active correct answer
+            if (marker.classList.contains('active')) {
+                marker.dataset.originalLabel = marker.textContent;
+            }
+            marker.classList.remove('hidden');
+            marker.classList.add('midi-user');
+            marker.textContent = cell.dataset.note;
+        }
+    });
+}
+
+function showMidiNoteOff(midiNumber, stringIdx = null) {
+    let selector = `.fret[data-midi="${midiNumber}"]`;
+    if (stringIdx !== null) {
+        selector = `.string-${stringIdx} .fret[data-midi="${midiNumber}"]`;
+    }
+
+    const fretCells = document.querySelectorAll(selector);
+    fretCells.forEach(cell => {
+        const marker = cell.querySelector('.note-marker');
+        if (marker && marker.classList.contains('midi-user')) {
+            marker.classList.remove('midi-user');
+            
+            // If it was a correct answer, restore its degree label
+            if (marker.classList.contains('active')) {
+                if (marker.dataset.originalLabel) {
+                    marker.textContent = marker.dataset.originalLabel;
+                    delete marker.dataset.originalLabel;
+                }
+            } else {
+                marker.classList.add('hidden');
+                marker.textContent = '';
+            }
+        }
+    });
+}
+function highlightRoot(midiNumber) {
+    const cells = document.querySelectorAll(`.fret[data-midi="${midiNumber}"]`);
+    cells.forEach(cell => {
+        const marker = cell.querySelector('.note-marker');
+        if (marker) {
+            marker.classList.remove('hidden', 'midi-user', 'target-root');
+            marker.classList.add('active', 'root-marker');
+            marker.textContent = 'R';
+        }
+    });
+}
+
+function highlightTargetRoot(midiNumber, stringIdx = null) {
+    // If stringIdx is provided, only highlight that specific one. 
+    // Otherwise, it's safer to just pick one if not specified.
+    let selector = `.fret[data-midi="${midiNumber}"]`;
+    if (stringIdx !== null) {
+        selector = `.string-${stringIdx} .fret[data-midi="${midiNumber}"]`;
+    }
+    
+    const cells = document.querySelectorAll(selector);
+    cells.forEach(cell => {
+        const marker = cell.querySelector('.note-marker');
+        if (marker) {
+            marker.classList.add('target-root');
+        }
+    });
+}
+
+function onFretClick(callback) {
+    const neck = document.querySelector('.fretboard-neck');
+    if (!neck) return;
+    
+    // Remove old listener if any (simplified)
+    const newNeck = neck.cloneNode(true);
+    neck.parentNode.replaceChild(newNeck, neck);
+
+    newNeck.addEventListener('click', (e) => {
+        const fret = e.target.closest('.fret');
+        if (fret) {
+            const midi = parseInt(fret.dataset.midi);
+            const note = fret.dataset.note;
+            callback({ midi, note, element: fret });
+        }
+    });
+}
+
+// --- js/midiHandler.js ---
+// js/midiHandler.js
+
+
+
+async function initMidi(onStatusChange) {
+    if (!navigator.requestMIDIAccess) {
+        console.warn('Web MIDI API is not supported in this browser.');
+        if (onStatusChange) onStatusChange('Unsupported');
+        return;
+    }
+
+    try {
+        const midiAccess = await navigator.requestMIDIAccess();
+        console.log('MIDI access granted.');
+        
+        const updateInputs = () => {
+            const inputs = midiAccess.inputs.values();
+            let hasDevice = false;
+            for (let input of inputs) {
+                input.onmidimessage = handleMidiMessage;
+                console.log(`Connected: ${input.name}`);
+                hasDevice = true;
+            }
+            if (onStatusChange) onStatusChange(hasDevice ? 'Connected' : 'Scanning...');
+        };
+
+        midiAccess.onstatechange = (e) => {
+            console.log(`MIDI state change: ${e.port.name} ${e.port.state}`);
+            updateInputs();
+        };
+
+        updateInputs();
+
+    } catch (err) {
+        console.error('Failed to get MIDI access', err);
+        if (onStatusChange) onStatusChange('Error');
+    }
+}
+
+function handleMidiMessage(event) {
+    const [status, data1, data2] = event.data;
+    const type = status & 0xf0;
+    const channel = status & 0x0f; // 0-15
+    const midiNote = data1;
+    const velocity = data2;
+
+    // Map MIDI channel to string index
+    // Diagnostic: 3rd string (index 2) was correct with 'channel-1' when channel was 3 (Ch 4).
+    // 2nd string (index 1) showed on 4th string (index 3) with 'channel-1' when channel was 4 (Ch 5).
+    // This confirms the mapping: Ch 1=Str 6, Ch 2=Str 5, Ch 3=Str 4, Ch 4=Str 3, Ch 5=Str 2, Ch 6=Str 1.
+    // Formula: stringIdx = 5 - channel (where channel is 0-indexed 0-5)
+    let stringIdx = null;
+    if (channel >= 0 && channel <= 5) {
+        stringIdx = 5 - channel;
+    }
+
+    // Note On
+    if (type === 0x90 && velocity > 0) {
+        showMidiNoteOn(midiNote, stringIdx);
+        playMidiNoteOn(midiNote, velocity / 127);
+    }
+    // Note Off
+    else if (type === 0x80 || (type === 0x90 && velocity === 0)) {
+        showMidiNoteOff(midiNote, stringIdx);
+        playMidiNoteOff(midiNote);
+    }
+}
+
+// --- js/modes/mode1.js ---
+// js/modes/mode1.js
+
+
+
+
+function mode1_render(container, currentKey) {
+    let difficulty = 'single'; // 'single' or 'chord'
+    let currentAnswer = null;
+    let currentAnswerNotes = [];
+    let isAnswerRevealed = false;
+    let userAnswer = null;
+    let currentOptions = [];
+
+    const html = `
+        <div class="glass-panel">
+            <div class="controls-grid">
+                <div class="control-card ${difficulty === 'single' ? 'selected' : ''}" data-diff="single">
+                    <i data-lucide="music"></i>
+                    <span>Single Note</span>
+                </div>
+                <div class="control-card ${difficulty === 'chord' ? 'selected' : ''}" data-diff="chord">
+                    <i data-lucide="layers"></i>
+                    <span>Chords (Diatonic)</span>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem;">
+                <button class="play-action-btn" id="play-btn" style="margin: 0;">
+                    <i data-lucide="play"></i>
+                </button>
+            </div>
+
+            <div id="status-message" style="margin-top: 1rem;">Press Play to start</div>
+            
+            <div class="answers-grid" id="answers-container">
+                <!-- Answer buttons injected here -->
+            </div>
+            
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+                <button class="btn-primary hidden" id="check-btn">Check Answer</button>
+                <button class="btn-primary hidden" id="next-btn" style="background-color: var(--success);">Next Question <i data-lucide="arrow-right"></i></button>
+            </div>
+        </div>
+    `;
+    container.innerHTML = html;
+
+    const diffCards = container.querySelectorAll('.control-card');
+    const playBtn = container.querySelector('#play-btn');
+    const answersContainer = container.querySelector('#answers-container');
+    const statusMessage = container.querySelector('#status-message');
+    const checkBtn = container.querySelector('#check-btn');
+    const nextBtn = container.querySelector('#next-btn');
+
+    // Setup Fretboard
+    initFretboard('fretboard-container');
+
+    diffCards.forEach(card => {
+        card.addEventListener('click', (e) => {
+            diffCards.forEach(c => c.classList.remove('selected'));
+            const target = e.currentTarget;
+            target.classList.add('selected');
+            difficulty = target.dataset.diff;
+            stopAll();
+            resetRound();
+        });
+    });
+
+    playBtn.addEventListener('click', () => {
+        stopAll();
+        if (!currentAnswer) {
+            generateRound();
+        } else {
+            replay();
+        }
+    });
+
+    checkBtn.addEventListener('click', () => {
+        checkAnswer();
+    });
+
+    nextBtn.addEventListener('click', () => {
+        stopAll();
+        generateRound();
+    });
+
+    function resetRound() {
+        currentAnswer = null;
+        currentAnswerNotes = [];
+        userAnswer = null;
+        isAnswerRevealed = false;
+        answersContainer.innerHTML = '';
+        statusMessage.textContent = 'Press Play to start';
+        statusMessage.className = '';
+        checkBtn.classList.add('hidden');
+        nextBtn.classList.add('hidden');
+        clearFretboard();
+    }
+
+    function replay() {
+        if (!currentAnswerNotes.length) return;
+        if (difficulty === 'single') playNote(currentAnswerNotes[0], '2n');
+        else playChord(currentAnswerNotes, '2n');
+    }
+
+    function generateRound() {
+        stopAll();
+        resetRound();
+        const scaleNotes = getScale(currentKey);
+        let options = [];
+        const degreeToSolfege = { 1: '도', 2: '레', 3: '미', 4: '파', 5: '솔', 6: '라', 7: '시' };
+
+        if (difficulty === 'single') {
+            const degrees = [1, 2, 3, 4, 5, 6, 7];
+            const randomDegree = pickRandom(degrees);
+            const targetNoteStr = scaleNotes[randomDegree - 1];
+            currentAnswer = targetNoteStr;
+            currentAnswerNotes = [targetNoteStr];
+            
+            playNote(targetNoteStr, '2n');
+            
+            options = degrees.map(d => ({ 
+                label: degreeToSolfege[d], 
+                value: scaleNotes[d - 1],
+                playNotes: scaleNotes[d - 1]
+            }));
+        } else {
+            const randomChordDef = pickRandom(MAJOR_DIATONIC_CHORDS);
+            const degree = randomChordDef.degree;
+            const rootNoteWithoutOctave = scaleNotes[degree - 1].slice(0, -1);
+            
+            const chordNotes = getChordNotes(rootNoteWithoutOctave, randomChordDef.type, 4);
+            currentAnswer = `${degree}`;
+            currentAnswerNotes = chordNotes;
+            
+            playChord(chordNotes, '2n');
+
+            options = MAJOR_DIATONIC_CHORDS.map(c => {
+                const root = scaleNotes[c.degree - 1].slice(0, -1);
+                const typeName = c.type === 'Major' ? 'maj' : c.type === 'Minor' ? 'min' : 'dim';
+                return {
+                    label: `${root} ${typeName}`,
+                    value: `${c.degree}`,
+                    playNotes: getChordNotes(root, c.type, 4)
+                };
+            });
+        }
+        
+        currentOptions = options;
+        renderAnswers(options);
+        statusMessage.textContent = 'What did you hear?';
+        statusMessage.className = '';
+    }
+
+    function renderAnswers(options) {
+        answersContainer.innerHTML = '';
+        options.forEach(opt => {
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.gap = '0.25rem';
+
+            const previewBtn = document.createElement('button');
+            previewBtn.className = 'preview-btn';
+            previewBtn.innerHTML = '<i data-lucide="volume-2" style="width:20px;height:20px;"></i>';
+            previewBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                stopAll();
+                if (Array.isArray(opt.playNotes)) playChord(opt.playNotes, '2n');
+                else playNote(opt.playNotes, '2n');
+            });
+
+            const btn = document.createElement('button');
+            btn.className = 'answer-btn';
+            btn.textContent = opt.label;
+            btn.dataset.val = opt.value;
+            btn.dataset.label = opt.label;
+            btn.addEventListener('click', () => {
+                if (isAnswerRevealed) return;
+                userAnswer = opt.value;
+                const allBtns = answersContainer.querySelectorAll('.answer-btn');
+                allBtns.forEach(b => b.classList.remove('active-select'));
+                btn.classList.add('active-select');
+                checkBtn.classList.remove('hidden');
+            });
+            
+            wrapper.appendChild(previewBtn);
+            wrapper.appendChild(btn);
+            answersContainer.appendChild(wrapper);
+        });
+        lucide.createIcons({ root: answersContainer });
+    }
+
+    function checkAnswer() {
+        if (!currentAnswer || userAnswer === null) {
+            statusMessage.textContent = 'Please select an answer first.';
+            statusMessage.className = 'status-wrong';
+            return;
+        }
+
+        const allBtns = answersContainer.querySelectorAll('.answer-btn');
+        allBtns.forEach(b => b.disabled = true);
+        isAnswerRevealed = true;
+        
+        const selectedBtn = Array.from(allBtns).find(b => b.dataset.val === userAnswer);
+        const selectedLabel = selectedBtn ? selectedBtn.dataset.label : userAnswer;
+
+        const labelsMap = getDegreeLabelMap(currentKey);
+        highlightNotesOnFretboard(currentAnswerNotes, labelsMap);
+
+        checkBtn.classList.add('hidden');
+        nextBtn.classList.remove('hidden');
+
+        if (userAnswer === currentAnswer) {
+            if (selectedBtn) selectedBtn.classList.add('correct');
+            statusMessage.textContent = 'Correct! Great job.';
+            statusMessage.className = 'status-correct';
+        } else {
+            if (selectedBtn) selectedBtn.classList.add('wrong');
+            const correctBtn = Array.from(allBtns).find(b => b.dataset.val === currentAnswer);
+            const correctLabel = correctBtn ? correctBtn.dataset.label : currentAnswer;
+            
+            statusMessage.innerHTML = `Incorrect.<br>Your Answer: ❌ <b>${selectedLabel}</b><br>Correct Answer: ✅ <b>${correctLabel}</b>`;
+            statusMessage.className = 'status-wrong';
+            if (correctBtn) correctBtn.classList.add('correct');
+        }
+        
+        replay();
+    }
+}
+
+// --- js/modes/mode2.js ---
+// js/modes/mode2.js
+
+
+
+
+function mode2_render(container, currentKey) {
+    let difficulty = 'major_minor'; // root, major, major_minor, various
+    let currentProgression = [];
+
+    const html = `
+        <div class="glass-panel">
+            <div class="controls-grid" id="diff-controls">
+                <div class="control-card" data-diff="major">
+                    <i data-lucide="sun"></i>
+                    <span>Major Only</span>
+                </div>
+                <div class="control-card" data-diff="major_minor">
+                    <i data-lucide="cloud-sun"></i>
+                    <span>Major & Minor</span>
+                </div>
+                <div class="control-card" data-diff="various">
+                    <i data-lucide="sparkles"></i>
+                    <span>Advanced Chords</span>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem;">
+                <button class="play-action-btn" id="play-btn" style="margin: 0;">
+                    <i data-lucide="play"></i>
+                </button>
+            </div>
+
+            <div id="status-message" style="margin-top: 1rem;">Press Play to start</div>
+            
+            <div class="progression-container" id="slots-container">
+                <!-- Slots injected here dynamically -->
+            </div>
+
+            <div class="answers-grid hidden" id="answers-container">
+                <!-- Chord options injected here -->
+            </div>
+            
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+                <button class="btn-primary hidden" id="check-btn">Check Answer</button>
+                <button class="btn-primary hidden" id="next-btn" style="background-color: var(--success);">Next Question <i data-lucide="arrow-right"></i></button>
+            </div>
+        </div>
+    `;
+    container.innerHTML = html;
+
+    const diffCards = container.querySelectorAll('.control-card');
+    const playBtn = container.querySelector('#play-btn');
+    const answersContainer = container.querySelector('#answers-container');
+    const statusMessage = container.querySelector('#status-message');
+    const slotsContainer = container.querySelector('#slots-container');
+    const checkBtn = container.querySelector('#check-btn');
+    const nextBtn = container.querySelector('#next-btn');
+
+    let slots = [];
+    let userAnswers = [];
+    let currentSlotFocus = 0;
+    let isAnswerRevealed = false;
+    
+    // Setup Fretboard
+    initFretboard('fretboard-container');
+    const fretboardWrapper = document.getElementById('fretboard-wrapper');
+
+    diffCards.forEach(card => {
+        card.addEventListener('click', (e) => {
+            diffCards.forEach(c => c.classList.remove('selected'));
+            const target = e.currentTarget;
+            target.classList.add('selected');
+            difficulty = target.dataset.diff;
+            stopAll();
+            resetRound();
+        });
+    });
+
+    playBtn.addEventListener('click', () => {
+        stopAll();
+        if (currentProgression.length === 0) {
+            generateRound();
+        } else {
+            // Replay
+            const chordNotesArray = currentProgression.map(c => c.notes);
+            playProgression(chordNotesArray, 80);
+        }
+    });
+
+    checkBtn.addEventListener('click', checkAnswer);
+    
+    nextBtn.addEventListener('click', () => {
+        stopAll();
+        generateRound();
+    });
+
+    function resetRound() {
+        currentProgression = [];
+        userAnswers = [];
+        currentSlotFocus = 0;
+        slotsContainer.innerHTML = '';
+        slots = [];
+        answersContainer.classList.add('hidden');
+        checkBtn.classList.add('hidden');
+        nextBtn.classList.add('hidden');
+        statusMessage.textContent = 'Press Play to start';
+        statusMessage.className = '';
+        isAnswerRevealed = false;
+        clearFretboard();
+    }
+
+    function generateRound() {
+        resetRound();
+        const scaleNotes = getScale(currentKey);
+        
+        let pool = [];
+        let displayPool = [];
+        if (difficulty === 'major') {
+            pool = MAJOR_DIATONIC_CHORDS.filter(c => c.type === 'Major');
+            displayPool = MAJOR_DIATONIC_CHORDS;
+        } else if (difficulty === 'major_minor') {
+            pool = MAJOR_DIATONIC_CHORDS.filter(c => c.type === 'Major' || c.type === 'Minor');
+            displayPool = MAJOR_DIATONIC_CHORDS;
+        } else {
+            pool = ADVANCED_CHORDS_POOL; // Uses all extended chords
+            displayPool = ADVANCED_CHORDS_POOL;
+        }
+
+        const sequenceLength = Math.floor(Math.random() * 5) + 4; // 4 to 8
+        userAnswers = Array(sequenceLength).fill(null);
+
+        // Generate DOM slots dynamically
+        for (let i = 0; i < sequenceLength; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'progression-slot';
+            slot.dataset.idx = i;
+            slot.textContent = '?';
+            slot.addEventListener('click', () => {
+                currentSlotFocus = i;
+                updateSlotFocus();
+            });
+            slotsContainer.appendChild(slot);
+            slots.push(slot);
+        }
+
+        let previousChordDef = null;
+
+        // Generate sequenceLength chords
+        currentProgression = Array.from({length: sequenceLength}).map((_, i) => {
+            let chordDef;
+            if (i === 0) {
+                // Always start with the I chord for musical context
+                chordDef = pool.find(c => c.degree === 1);
+            } else {
+                do {
+                    chordDef = pickRandom(pool);
+                } while (previousChordDef && chordDef.degree === previousChordDef.degree && pool.length > 1);
+            }
+            previousChordDef = chordDef;
+
+            const rootNoteWithoutOctave = scaleNotes[chordDef.degree - 1].slice(0, -1);
+            let notes = getChordNotes(rootNoteWithoutOctave, chordDef.type, 4);
+            // add bass note
+            notes.push(`${rootNoteWithoutOctave}3`);
+            
+            return {
+                degree: chordDef.degree,
+                type: chordDef.type,
+                label: `${chordDef.degree} ${chordDef.suffix}`,
+                notes: notes
+            };
+        });
+
+        const chordNotesArray = currentProgression.map(c => c.notes);
+        playProgression(chordNotesArray, 80);
+
+        renderOptions(displayPool);
+        answersContainer.classList.remove('hidden');
+        checkBtn.classList.remove('hidden');
+        statusMessage.textContent = 'Select the chords for each slot.';
+        
+        updateSlotFocus();
+    }
+
+    function updateSlotFocus() {
+        slots.forEach((slot, idx) => {
+            if (idx === currentSlotFocus) {
+                slot.style.borderColor = 'var(--primary)';
+                slot.style.boxShadow = '0 0 10px var(--primary-glow)';
+            } else {
+                slot.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                slot.style.boxShadow = 'none';
+            }
+        });
+        
+        // Update fretboard if answer is revealed
+        if (isAnswerRevealed) {
+            const allNotes = [...new Set(currentProgression.flatMap(c => c.notes))];
+            const labelsMap = getDegreeLabelMap(currentKey);
+            highlightNotesOnFretboard(allNotes, labelsMap);
+        }
+    }
+
+    function renderOptions(pool) {
+        answersContainer.innerHTML = '';
+        const scaleNotes = getScale(currentKey);
+
+        pool.forEach(chordDef => {
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.gap = '0.25rem';
+
+            const rootNoteWithoutOctave = scaleNotes[chordDef.degree - 1].slice(0, -1);
+            let playNotes = getChordNotes(rootNoteWithoutOctave, chordDef.type, 4);
+            playNotes.push(`${rootNoteWithoutOctave}3`);
+
+            const previewBtn = document.createElement('button');
+            previewBtn.className = 'preview-btn';
+            previewBtn.innerHTML = '<i data-lucide="volume-2" style="width:20px;height:20px;"></i>';
+            previewBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                stopAll();
+                playChord(playNotes, '2n');
+            });
+
+            const btn = document.createElement('button');
+            btn.className = 'answer-btn';
+            const label = `${chordDef.degree} ${chordDef.suffix}`;
+            btn.textContent = label;
+            btn.addEventListener('click', () => {
+                userAnswers[currentSlotFocus] = label;
+                slots[currentSlotFocus].innerHTML = label;
+                // Move to next empty slot
+                const nextEmpty = userAnswers.findIndex(a => a === null);
+                if (nextEmpty !== -1) {
+                    currentSlotFocus = nextEmpty;
+                    updateSlotFocus();
+                }
+            });
+            
+            wrapper.appendChild(previewBtn);
+            wrapper.appendChild(btn);
+            answersContainer.appendChild(wrapper);
+        });
+        lucide.createIcons({ root: answersContainer });
+    }
+
+    function checkAnswer() {
+        if (userAnswers.includes(null)) {
+            statusMessage.textContent = `Please fill all ${userAnswers.length} slots before checking.`;
+            statusMessage.className = 'status-wrong';
+            return;
+        }
+
+        let isCorrect = true;
+        userAnswers.forEach((ans, idx) => {
+            const correctAns = currentProgression[idx].label;
+            if (ans === correctAns) {
+                slots[idx].style.borderColor = 'var(--success)';
+                slots[idx].style.color = 'var(--success)';
+            } else {
+                slots[idx].style.borderColor = 'var(--danger)';
+                slots[idx].style.color = 'var(--danger)';
+                slots[idx].innerHTML = `<span style="text-decoration:line-through;font-size:0.8em;">${ans}</span><br><span style="color:var(--success);font-size:0.9em;">${correctAns}</span>`;
+                isCorrect = false;
+            }
+        });
+
+        checkBtn.classList.add('hidden');
+        nextBtn.classList.remove('hidden');
+        isAnswerRevealed = true;
+        
+        const allNotes = [...new Set(currentProgression.flatMap(c => c.notes))];
+        const labelsMap = getDegreeLabelMap(currentKey);
+        highlightNotesOnFretboard(allNotes, labelsMap);
+
+        if (isCorrect) {
+            statusMessage.textContent = 'Perfect! You nailed the progression.';
+            statusMessage.className = 'status-correct';
+        } else {
+            statusMessage.textContent = 'Not quite. The correct progression is shown below your answers.';
+            statusMessage.className = 'status-wrong';
+        }
+    }
+}
+
+// --- js/modes/mode3.js ---
+// js/modes/mode3.js
+
+
+
+
+function mode3_render(container, currentKey) {
+    let currentMelodyDegrees = [];
+    let isAnswerRevealed = false;
+
+    const html = `
+        <div class="glass-panel">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <p>Listen to the context chord, then identify the 4-note melody using scale degrees.</p>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 1rem;">
+                <button class="play-action-btn" id="play-btn" style="margin: 0;">
+                    <i data-lucide="play"></i>
+                </button>
+            </div>
+
+            <div id="status-message" style="margin-top: 1rem;">Press Play to start</div>
+            
+            <div class="progression-container" id="melody-slots">
+                <!-- Slots injected dynamically -->
+            </div>
+
+            <div class="answers-grid hidden" id="answers-container">
+                <!-- Degree options injected here -->
+            </div>
+            
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+                <button class="btn-primary hidden" id="check-btn">Check Answer</button>
+                <button class="btn-primary hidden" id="next-btn" style="background-color: var(--success);">Next Question <i data-lucide="arrow-right"></i></button>
+            </div>
+        </div>
+    `;
+    container.innerHTML = html;
+
+    const playBtn = container.querySelector('#play-btn');
+    const answersContainer = container.querySelector('#answers-container');
+    const statusMessage = container.querySelector('#status-message');
+    const slotsContainer = container.querySelector('#slots-container');
+    const checkBtn = container.querySelector('#check-btn');
+    const nextBtn = container.querySelector('#next-btn');
+
+    // Setup Fretboard
+    initFretboard('fretboard-container');
+    const fretboardWrapper = document.getElementById('fretboard-wrapper');
+
+    let slots = [];
+    let userAnswers = [];
+    let currentSlotFocus = 0;
+    const degreeToSolfege = { 1: '도', 2: '레', 3: '미', 4: '파', 5: '솔', 6: '라', 7: '시' };
+
+    playBtn.addEventListener('click', () => {
+        stopAll();
+        if (currentMelodyDegrees.length === 0) {
+            generateRound();
+        } else {
+            replayMelody();
+        }
+    });
+
+    checkBtn.addEventListener('click', checkAnswer);
+    nextBtn.addEventListener('click', () => {
+        stopAll();
+        generateRound();
+    });
+
+    function resetRound() {
+        currentMelodyDegrees = [];
+        userAnswers = [];
+        currentSlotFocus = 0;
+        isAnswerRevealed = false;
+        const slotsContainer = container.querySelector('#melody-slots');
+        slotsContainer.innerHTML = '';
+        slots = [];
+        answersContainer.classList.add('hidden');
+        checkBtn.classList.add('hidden');
+        nextBtn.classList.add('hidden');
+        statusMessage.textContent = 'Press Play to hear the melody';
+        statusMessage.className = '';
+        clearFretboard();
+    }
+
+    function generateRound() {
+        resetRound();
+        const sequenceLength = Math.floor(Math.random() * 5) + 4; // 4 to 8
+        userAnswers = Array(sequenceLength).fill(null);
+
+        // Generate DOM slots dynamically
+        const slotsContainer = container.querySelector('#melody-slots');
+        for (let i = 0; i < sequenceLength; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'progression-slot';
+            slot.dataset.idx = i;
+            slot.textContent = '?';
+            slot.addEventListener('click', () => {
+                currentSlotFocus = i;
+                updateSlotFocus();
+            });
+            slotsContainer.appendChild(slot);
+            slots.push(slot);
+        }
+
+        let previousDegree = null;
+
+        currentMelodyDegrees = Array.from({length: sequenceLength}).map((_, i) => {
+            let degree;
+            if (i === 0) {
+                // Ensure it starts on a stable note (1, 3, or 5)
+                degree = pickRandom([1, 3, 5]);
+            } else {
+                do {
+                    degree = Math.floor(Math.random() * 7) + 1;
+                } while (degree === previousDegree);
+            }
+            previousDegree = degree;
+            return degree;
+        });
+
+        replayMelody();
+
+        renderOptions();
+        answersContainer.classList.remove('hidden');
+        checkBtn.classList.remove('hidden');
+        statusMessage.textContent = 'Select the relative degrees for each slot.';
+        
+        updateSlotFocus();
+    }
+
+    function replayMelody() {
+        const scaleNotes = getScale(currentKey);
+        const melodyNotes = currentMelodyDegrees.map(deg => scaleNotes[deg - 1]);
+        playMelody(melodyNotes, 100);
+    }
+
+    function updateSlotFocus() {
+        slots.forEach((slot, idx) => {
+            if (idx === currentSlotFocus) {
+                slot.style.borderColor = 'var(--primary)';
+                slot.style.boxShadow = '0 0 10px var(--primary-glow)';
+            } else {
+                slot.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                slot.style.boxShadow = 'none';
+            }
+        });
+
+        // Update fretboard if answer is revealed
+        if (isAnswerRevealed) {
+            const scaleNotes = getScale(currentKey);
+            const allTargetNotes = [...new Set(currentMelodyDegrees.map(deg => scaleNotes[deg - 1]))];
+            const labelsMap = getDegreeLabelMap(currentKey);
+            highlightNotesOnFretboard(allTargetNotes, labelsMap);
+        }
+    }
+
+    function renderOptions() {
+        answersContainer.innerHTML = '';
+        const scaleNotes = getScale(currentKey);
+        
+        for (let i = 1; i <= 7; i++) {
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.gap = '0.25rem';
+            
+            const previewBtn = document.createElement('button');
+            previewBtn.className = 'preview-btn';
+            previewBtn.innerHTML = '<i data-lucide="volume-2" style="width:20px;height:20px;"></i>';
+            previewBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                stopAll();
+                playNote(scaleNotes[i - 1], '2n');
+            });
+            
+            const btn = document.createElement('button');
+            btn.className = 'answer-btn';
+            btn.textContent = i.toString();
+            btn.addEventListener('click', () => {
+                userAnswers[currentSlotFocus] = i;
+                slots[currentSlotFocus].innerHTML = i.toString();
+                // Move to next empty slot
+                const nextEmpty = userAnswers.findIndex(a => a === null);
+                if (nextEmpty !== -1) {
+                    currentSlotFocus = nextEmpty;
+                    updateSlotFocus();
+                }
+            });
+            wrapper.appendChild(previewBtn);
+            wrapper.appendChild(btn);
+            answersContainer.appendChild(wrapper);
+        }
+        lucide.createIcons({ root: answersContainer });
+    }
+
+    function checkAnswer() {
+        if (userAnswers.includes(null)) {
+            statusMessage.textContent = `Please fill all ${userAnswers.length} slots before checking.`;
+            statusMessage.className = 'status-wrong';
+            return;
+        }
+
+        let isCorrect = true;
+        userAnswers.forEach((ans, idx) => {
+            const correctAns = currentMelodyDegrees[idx];
+            if (ans === correctAns) {
+                slots[idx].style.borderColor = 'var(--success)';
+                slots[idx].style.color = 'var(--success)';
+            } else {
+                slots[idx].style.borderColor = 'var(--danger)';
+                slots[idx].style.color = 'var(--danger)';
+                slots[idx].innerHTML = `<span style="text-decoration:line-through;font-size:0.8em;">${ans}</span><br><span style="color:var(--success);font-size:0.9em;">${correctAns}</span>`;
+                isCorrect = false;
+            }
+        });
+
+        checkBtn.classList.add('hidden');
+        nextBtn.classList.remove('hidden');
+        isAnswerRevealed = true;
+        
+        const scaleNotes = getScale(currentKey);
+        const allTargetNotes = [...new Set(currentMelodyDegrees.map(deg => scaleNotes[deg - 1]))];
+        const labelsMap = getDegreeLabelMap(currentKey);
+        highlightNotesOnFretboard(allTargetNotes, labelsMap);
+
+        if (isCorrect) {
+            statusMessage.textContent = 'Perfect! Excellent relative pitch.';
+            statusMessage.className = 'status-correct';
+        } else {
+            statusMessage.textContent = 'Not quite. The correct degrees are shown below your answers.';
+            statusMessage.className = 'status-wrong';
+        }
+    }
+}
+
+// --- js/modes/mode4.js ---
+// js/modes/mode4.js
+
+
+
+
+function mode4_render(container, currentKey) {
+    let currentProgression = [];
+    let currentMelody = [];
+    let isAnswerRevealed = false;
+
+    const html = `
+        <div class="glass-panel">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <p>Listen to the generated melody and identify the underlying 4-chord progression.</p>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 1rem;">
+                <button class="play-action-btn" id="play-btn" style="margin: 0;">
+                    <i data-lucide="play"></i>
+                </button>
+            </div>
+
+            <div id="status-message" style="margin-top: 1rem;">Press Play to start</div>
+            
+            <div class="progression-container" id="progression-slots">
+                <!-- Slots injected dynamically -->
+            </div>
+
+            <div class="answers-grid hidden" id="answers-container">
+                <!-- Chord options injected here -->
+            </div>
+            
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+                <button class="btn-primary hidden" id="check-btn">Check Answer</button>
+                <button class="btn-primary hidden" id="next-btn" style="background-color: var(--success);">Next Question <i data-lucide="arrow-right"></i></button>
+            </div>
+        </div>
+    `;
+    container.innerHTML = html;
+
+    const playBtn = container.querySelector('#play-btn');
+    const answersContainer = container.querySelector('#answers-container');
+    const statusMessage = container.querySelector('#status-message');
+    const slotsContainer = container.querySelector('#progression-slots');
+    const checkBtn = container.querySelector('#check-btn');
+    const nextBtn = container.querySelector('#next-btn');
+
+    // Setup Fretboard
+    initFretboard('fretboard-container');
+    const fretboardWrapper = document.getElementById('fretboard-wrapper');
+
+    let slots = [];
+    let userAnswers = [];
+    let currentSlotFocus = 0;
+    const degreeToSolfege = { 1: '도', 2: '레', 3: '미', 4: '파', 5: '솔', 6: '라', 7: '시' };
+
+    playBtn.addEventListener('click', () => {
+        stopAll();
+        if (currentProgression.length === 0) {
+            generateRound();
+        } else {
+            playAndHighlight();
+        }
+    });
+
+    checkBtn.addEventListener('click', checkAnswer);
+    nextBtn.addEventListener('click', () => {
+        stopAll();
+        generateRound();
+    });
+
+    function resetRound() {
+        currentProgression = [];
+        currentMelody = [];
+        userAnswers = [];
+        currentSlotFocus = 0;
+        isAnswerRevealed = false;
+        slotsContainer.innerHTML = '';
+        slots = [];
+        answersContainer.classList.add('hidden');
+        checkBtn.classList.add('hidden');
+        nextBtn.classList.add('hidden');
+        statusMessage.textContent = 'Press Play to start';
+        statusMessage.className = '';
+        clearFretboard();
+    }
+
+    function generateRound() {
+        resetRound();
+        const scaleNotes = getScale(currentKey);
+        const pool = MAJOR_DIATONIC_CHORDS; // Use all diatonic chords
+
+        const sequenceLength = Math.floor(Math.random() * 5) + 4; // 4 to 8
+        userAnswers = Array(sequenceLength).fill(null);
+
+        for (let i = 0; i < sequenceLength; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'progression-slot';
+            slot.dataset.idx = i;
+            slot.textContent = '?';
+            slot.addEventListener('click', () => {
+                currentSlotFocus = i;
+                updateSlotFocus();
+            });
+            slotsContainer.appendChild(slot);
+            slots.push(slot);
+        }
+
+        let previousChordDef = null;
+
+        // 1. Generate chords
+        currentProgression = Array.from({length: sequenceLength}).map((_, i) => {
+            let chordDef;
+            if (i === 0) {
+                // Always start with I chord
+                chordDef = pool.find(c => c.degree === 1);
+            } else {
+                do {
+                    chordDef = pickRandom(pool);
+                } while (previousChordDef && chordDef.degree === previousChordDef.degree && pool.length > 1);
+            }
+            previousChordDef = chordDef;
+
+            const rootNoteWithoutOctave = scaleNotes[chordDef.degree - 1].slice(0, -1);
+            const notes = getChordNotes(rootNoteWithoutOctave, chordDef.type, 4);
+            const typeName = chordDef.type === 'Major' ? 'maj' : chordDef.type === 'Minor' ? 'min' : 'dim';
+            
+            return {
+                label: `${chordDef.degree} ${typeName}`,
+                notes: notes
+            };
+        });
+
+        // 2. Generate melody from those chords
+        // For each chord, pick 4 random notes (arpeggiated melody)
+        currentMelody = [];
+        currentProgression.forEach(chord => {
+            for(let i=0; i<4; i++) {
+                currentMelody.push(pickRandom(chord.notes));
+            }
+        });
+
+        playAndHighlight();
+
+        renderOptions(pool);
+        answersContainer.classList.remove('hidden');
+        checkBtn.classList.remove('hidden');
+        statusMessage.textContent = 'Select the underlying chords for each slot.';
+        
+        updateSlotFocus();
+    }
+
+    function playAndHighlight() {
+        const bpm = 160;
+        playMelody(currentMelody, bpm);
+        
+        const beatDuration = 60 / bpm;
+        const msPerChord = beatDuration * 4 * 1000;
+
+        if (window.highlightTimeouts) {
+            window.highlightTimeouts.forEach(clearTimeout);
+        }
+        window.highlightTimeouts = [];
+
+        slots.forEach((slot, idx) => {
+            const t = setTimeout(() => {
+                // Highlight active playing chord
+                slots.forEach(s => s.style.transform = 'scale(1)');
+                slot.style.transform = 'scale(1.15)';
+                slot.style.transition = 'transform 0.1s';
+                
+                if (idx === slots.length - 1) {
+                    // Revert last slot after it finishes
+                    const t2 = setTimeout(() => {
+                        slot.style.transform = 'scale(1)';
+                    }, msPerChord);
+                    window.highlightTimeouts.push(t2);
+                }
+            }, idx * msPerChord);
+            window.highlightTimeouts.push(t);
+        });
+        
+        // Re-apply focus styles safely
+        const t3 = setTimeout(() => {
+            updateSlotFocus();
+        }, slots.length * msPerChord);
+        window.highlightTimeouts.push(t3);
+    }
+
+    function updateSlotFocus() {
+        slots.forEach((slot, idx) => {
+            if (idx === currentSlotFocus) {
+                slot.style.borderColor = 'var(--primary)';
+                slot.style.boxShadow = '0 0 10px var(--primary-glow)';
+            } else {
+                slot.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                slot.style.boxShadow = 'none';
+            }
+        });
+
+        // Update fretboard if answer is revealed
+        if (isAnswerRevealed) {
+            const allNotes = [...new Set(currentProgression.flatMap(c => c.notes))];
+            const labelsMap = getDegreeLabelMap(currentKey);
+            highlightNotesOnFretboard(allNotes, labelsMap);
+        }
+    }
+
+    function renderOptions(pool) {
+        answersContainer.innerHTML = '';
+        pool.forEach(chordDef => {
+            const wrapper = document.createElement('div');
+            wrapper.style.display = 'flex';
+            wrapper.style.gap = '0.25rem';
+            
+            const scaleNotes = getScale(currentKey);
+            const rootNoteWithoutOctave = scaleNotes[chordDef.degree - 1].slice(0, -1);
+            const playNotes = getChordNotes(rootNoteWithoutOctave, chordDef.type, 4);
+
+            const previewBtn = document.createElement('button');
+            previewBtn.className = 'preview-btn';
+            previewBtn.innerHTML = '<i data-lucide="volume-2" style="width:20px;height:20px;"></i>';
+            previewBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                stopAll();
+                playChord(playNotes, '2n');
+            });
+
+            const btn = document.createElement('button');
+            btn.className = 'answer-btn';
+            const typeName = chordDef.type === 'Major' ? 'maj' : chordDef.type === 'Minor' ? 'min' : 'dim';
+            const label = `${chordDef.degree} ${typeName}`;
+            btn.textContent = label;
+            btn.addEventListener('click', () => {
+                userAnswers[currentSlotFocus] = label;
+                slots[currentSlotFocus].innerHTML = label;
+                // Move to next empty slot
+                const nextEmpty = userAnswers.findIndex(a => a === null);
+                if (nextEmpty !== -1) {
+                    currentSlotFocus = nextEmpty;
+                    updateSlotFocus();
+                }
+            });
+            wrapper.appendChild(previewBtn);
+            wrapper.appendChild(btn);
+            answersContainer.appendChild(wrapper);
+        });
+        lucide.createIcons({ root: answersContainer });
+    }
+
+    function checkAnswer() {
+        if (userAnswers.includes(null)) {
+            statusMessage.textContent = `Please fill all ${userAnswers.length} slots before checking.`;
+            statusMessage.className = 'status-wrong';
+            return;
+        }
+
+        let isCorrect = true;
+        userAnswers.forEach((ans, idx) => {
+            const correctAns = currentProgression[idx].label;
+            if (ans === correctAns) {
+                slots[idx].style.borderColor = 'var(--success)';
+                slots[idx].style.color = 'var(--success)';
+            } else {
+                slots[idx].style.borderColor = 'var(--danger)';
+                slots[idx].style.color = 'var(--danger)';
+                slots[idx].innerHTML = `<span style="text-decoration:line-through;font-size:0.8em;">${ans}</span><br><span style="color:var(--success);font-size:0.9em;">${correctAns}</span>`;
+                isCorrect = false;
+            }
+        });
+
+        checkBtn.classList.add('hidden');
+        nextBtn.classList.remove('hidden');
+        isAnswerRevealed = true;
+        
+        const allNotes = [...new Set(currentProgression.flatMap(c => c.notes))];
+        const labelsMap = getDegreeLabelMap(currentKey);
+        highlightNotesOnFretboard(allNotes, labelsMap);
+
+        if (isCorrect) {
+            statusMessage.textContent = 'Perfect! You reverse-engineered the progression.';
+            statusMessage.className = 'status-correct';
+        } else {
+            statusMessage.textContent = 'Not quite. The correct chords are shown below your answers.';
+            statusMessage.className = 'status-wrong';
+        }
+    }
+}
+
+// --- js/modes/mode5.js ---
+// js/modes/mode5.js
+
+
+
+
+function mode5_render(container) {
+    let currentRoot = 'C';
+    let currentType = 'Major';
+    let currentStringSet = [0, 1, 2]; // 1,2,3 strings
+
+    const triadTypes = ['Major', 'Minor', 'Diminished', 'Augmented'];
+    const stringSets = [
+        { label: '1, 2, 3 strings', indices: [0, 1, 2] },
+        { label: '2, 3, 4 strings', indices: [1, 2, 3] },
+        { label: '3, 4, 5 strings', indices: [2, 3, 4] },
+        { label: '4, 5, 6 strings', indices: [3, 4, 5] }
+    ];
+
+    const html = `
+        <div class="glass-panel chord-explorer">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h2>Chord Explorer</h2>
+                <p>Master triads and their intervals across the neck.</p>
+            </div>
+
+            <div class="explorer-layout">
+                <div class="explorer-controls">
+                    <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="setting-item">
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Root Note</label>
+                            <div class="custom-select-wrapper">
+                                <select id="root-select" class="custom-select">
+                                    ${NOTES.map(n => `<option value="${n}" ${n === currentRoot ? 'selected' : ''}>${n}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Chord Type</label>
+                            <div class="custom-select-wrapper">
+                                <select id="type-select" class="custom-select">
+                                    ${triadTypes.map(t => `<option value="${t}" ${t === currentType ? 'selected' : ''}>${t}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; display: flex; align-items: center; gap: 2.5rem;">
+                        <div style="flex: 1;">
+                            <label style="display: block; margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Select Strings (1-6)</label>
+                            <div class="string-checkbox-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+                                ${[1, 2, 3, 4, 5, 6].map(s => `
+                                    <div class="string-check-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="checkbox" id="string-check-${s}" class="string-checkbox" value="${s-1}" ${currentStringSet.includes(s-1) ? 'checked' : ''}>
+                                        <label for="string-check-${s}" style="font-size: 0.9rem; font-weight: 600; cursor: pointer; color: var(--text-main);">${s}</label>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <button class="play-chord-premium" id="play-chord-btn" style="flex-shrink: 0;">
+                            <i data-lucide="play"></i>
+                            <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Play Chord</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="explorer-visuals">
+                    <div id="chord-formula-container" class="formula-display">
+                        <!-- Formula badges injected here -->
+                    </div>
+                    
+                    <div class="staff-container">
+                        <svg id="staff-svg" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet">
+                            <!-- Staff lines -->
+                            <line x1="10" y1="30" x2="190" y2="30" stroke="#333" stroke-width="1" />
+                            <line x1="10" y1="45" x2="190" y2="45" stroke="#333" stroke-width="1" />
+                            <line x1="10" y1="60" x2="190" y2="60" stroke="#333" stroke-width="1" />
+                            <line x1="10" y1="75" x2="190" y2="75" stroke="#333" stroke-width="1" />
+                            <line x1="10" y1="90" x2="190" y2="90" stroke="#333" stroke-width="1" />
+                            
+                            <!-- Clef (simplified) -->
+                            <text x="15" y="75" fill="#111" font-size="40" font-family="serif">𝄞</text>
+                            
+                            <g id="staff-notes"></g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    container.innerHTML = html;
+    lucide.createIcons({ root: container });
+
+    const rootSelect = container.querySelector('#root-select');
+    const typeSelect = container.querySelector('#type-select');
+    const playBtn = container.querySelector('#play-chord-btn');
+    const setBtns = container.querySelectorAll('.filter-btn');
+
+    // Setup Fretboard
+    initFretboard('fretboard-container');
+
+    const updateVisualization = () => {
+        const notes = getChordNotes(currentRoot, currentType, 4); // Use 4th octave for staff
+        const formula = getChordFormula(currentType);
+        
+        // Fretboard highlight
+        const labelsMap = {};
+        notes.forEach((fullNote, idx) => {
+            const noteName = fullNote.match(/^[A-Ga-g][b#]?/)[0];
+            labelsMap[noteName] = formula[idx];
+        });
+        highlightNotesOnFretboard(notes, labelsMap, currentStringSet);
+
+        // Update Formula UI
+        const formulaContainer = container.querySelector('#chord-formula-container');
+        formulaContainer.innerHTML = formula.map((deg, i) => `
+            <div class="formula-badge ${deg.includes('b') || deg.includes('#') ? 'altered' : ''}">
+                <span class="formula-deg">${deg}</span>
+                <span class="formula-note">${notes[i].match(/^[A-Ga-g][b#]?/)[0]}</span>
+            </div>
+        `).join('<div class="formula-sep"></div>');
+
+        // Update Staff
+        drawStaff(notes, formula);
+    };
+
+    function drawStaff(notes, formula) {
+        const g = container.querySelector('#staff-notes');
+        g.innerHTML = '';
+        
+        // Simplify staff mapping (Root position)
+        // Center line (B4) = 60px. Each step is 7.5px.
+        // MIDI mapping for C4=60, D4=62...
+        const midiToY = (noteStr) => {
+            const noteName = noteStr.match(/^[A-Ga-g][b#]?/)[0];
+            const octave = parseInt(noteStr.slice(-1));
+            const noteValues = { 'C': 0, 'Db': 1, 'D': 2, 'Eb': 3, 'E': 4, 'F': 5, 'Gb': 6, 'G': 7, 'Ab': 8, 'A': 9, 'Bb': 10, 'B': 11 };
+            const midi = (octave + 1) * 12 + noteValues[noteName];
+            
+            // Map B4 (71) to 60px
+            // Staff position (steps from B4)
+            const staffSteps = { 'C': 0, 'D': 1, 'E': 2, 'F': 3, 'G': 4, 'A': 5, 'B': 6 };
+            const rootSteps = staffSteps[noteName[0]]; // base letter
+            const totalSteps = (octave - 4) * 7 + rootSteps - 6; // -6 because B4 is 6th step in octave 4 relative to C
+            
+            return 60 - (totalSteps * 7.5);
+        };
+
+        notes.forEach((noteStr, idx) => {
+            const y = midiToY(noteStr);
+            const x = 70 + idx * 40;
+            
+            // Draw note head
+            const ellipse = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+            ellipse.setAttribute("cx", x);
+            ellipse.setAttribute("cy", y);
+            ellipse.setAttribute("rx", 6);
+            ellipse.setAttribute("ry", 4.5);
+            ellipse.setAttribute("fill", idx === 0 ? "var(--primary)" : "#111");
+            g.appendChild(ellipse);
+
+            // Label degree
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", x);
+            text.setAttribute("y", y - 12);
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("fill", "#555");
+            text.setAttribute("font-size", "10");
+            text.setAttribute("font-weight", "bold");
+            text.textContent = formula[idx];
+            g.appendChild(text);
+
+            // Ledger lines if needed
+            if (y >= 105) { // Below staff
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", x - 10); line.setAttribute("y1", 105);
+                line.setAttribute("x2", x + 10); line.setAttribute("y2", 105);
+                line.setAttribute("stroke", "#333");
+                g.appendChild(line);
+            }
+        });
+    }
+
+    rootSelect.addEventListener('change', (e) => {
+        currentRoot = e.target.value;
+        updateVisualization();
+    });
+
+    typeSelect.addEventListener('change', (e) => {
+        currentType = e.target.value;
+        updateVisualization();
+    });
+
+    const checkboxes = container.querySelectorAll('.string-checkbox');
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            currentStringSet = Array.from(checkboxes)
+                .filter(c => c.checked)
+                .map(c => parseInt(c.value));
+            updateVisualization();
+        });
+    });
+
+    playBtn.addEventListener('click', () => {
+        stopAll();
+        const notes = getChordNotes(currentRoot, currentType, 4);
+        playChord(notes, '1n');
+    });
+
+    // Initial render
+    updateVisualization();
+}
+
+// --- js/modes/mode6.js ---
+// js/modes/mode6.js
+
+
+
+
+function mode6_render(container, currentKey) {
+    let currentRootMidi = null;
+    let targetTones = []; // { degree: 3, midi: X, found: false }
+    let userSelections = [];
+    let isAnswerRevealed = false;
+    let currentChordInfo = null;
+
+    const html = `
+        <div class="glass-panel geometry-explorer">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h2 style="font-size: 2rem; background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Functional Fretboard</h2>
+                <p style="color: var(--text-muted);">Complete the chord shapes to master fretboard geometry.</p>
+            </div>
+
+            <div class="explorer-layout" style="display: flex; flex-direction: column; gap: 2rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="explorer-controls" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div id="context-badge" class="theory-badge" style="justify-content: flex-start;">
+                            <span id="degree-text">Degree: ---</span>
+                            <span id="chord-type-text">Chord: ---</span>
+                        </div>
+
+                        <div id="target-info-card" class="glass-panel" style="background: rgba(99, 102, 241, 0.05); border: 2px solid var(--primary); padding: 2rem; text-align: left; position: relative;">
+                            <div style="position: absolute; top: 0; right: 0; padding: 0.5rem 1rem; background: var(--primary); color: white; font-size: 0.7rem; font-weight: 800; border-bottom-left-radius: 12px; letter-spacing: 1px;">MISSION</div>
+                            <span style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 1px;">Complete the Shape</span>
+                            <div id="interval-name-display" style="font-size: 1.8rem; font-weight: 900; color: var(--text-main);">Find 3rd & 5th</div>
+                            <div id="notes-display" style="font-size: 1.1rem; color: var(--primary); margin-top: 0.5rem; font-weight: 600;">---</div>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; margin-top: auto;">
+                            <button class="play-action-btn" id="play-btn" style="margin: 0; width: 60px; height: 60px;">
+                                <i data-lucide="play"></i>
+                            </button>
+                            <button class="btn-primary" id="next-btn" style="background: var(--success); flex: 1; margin: 0; justify-content: center;">
+                                Next Chord <i data-lucide="arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="explorer-visuals" style="background: rgba(255,255,255,0.02); border-radius: 20px; padding: 1rem; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center;">
+                        <div class="staff-container" style="width: 100%; max-width: 400px; position: relative;">
+                            <svg id="staff-svg" viewBox="0 0 240 140" preserveAspectRatio="xMidYMid meet">
+                                <rect x="0" y="0" width="240" height="140" fill="white" rx="12" />
+                                <line x1="20" y1="40" x2="220" y2="40" stroke="#ddd" stroke-width="1" />
+                                <line x1="20" y1="55" x2="220" y2="55" stroke="#ddd" stroke-width="1" />
+                                <line x1="20" y1="70" x2="220" y2="70" stroke="#ddd" stroke-width="1" />
+                                <line x1="20" y1="85" x2="220" y2="85" stroke="#ddd" stroke-width="1" />
+                                <line x1="20" y1="100" x2="220" y2="100" stroke="#ddd" stroke-width="1" />
+                                <text x="25" y="85" fill="#333" font-size="45" font-family="serif">𝄞</text>
+                                <g id="staff-notes"></g>
+                            </svg>
+                            <div id="chord-symbol" style="position: absolute; top: 15px; right: 25px; font-weight: 900; color: var(--primary); font-size: 1.5rem;"></div>
+                        </div>
+                        <div id="status-message" style="margin-top: 1.5rem; font-weight: 700; color: var(--text-muted); font-size: 1.1rem; text-align: center;">Press Play to start</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="harmony-map-container" class="glass-panel" style="margin-top: 2rem; padding: 1.5rem; overflow-x: auto; background: rgba(0,0,0,0.2);">
+                <div style="display: flex; gap: 0.5rem; min-width: 800px; justify-content: space-between;"></div>
+            </div>
+        </div>
+    `;
+    container.innerHTML = html;
+    lucide.createIcons({ root: container });
+
+    const playBtn = container.querySelector('#play-btn');
+    const nextBtn = container.querySelector('#next-btn');
+    const statusMessage = container.querySelector('#status-message');
+    const intervalNameDisplay = container.querySelector('#interval-name-display');
+    const notesDisplay = container.querySelector('#notes-display');
+    const degreeText = container.querySelector('#degree-text');
+    const chordTypeText = container.querySelector('#chord-type-text');
+    const chordSymbol = container.querySelector('#chord-symbol');
+    const harmonyMap = container.querySelector('#harmony-map-container div');
+
+    initFretboard('fretboard-container');
+
+    const generateRound = () => {
+        try {
+            stopAll();
+            clearFretboard();
+            
+            // Clear all state classes from fret cells and markers
+            document.querySelectorAll('.fret').forEach(f => {
+                f.classList.remove('target-root-fret', 'correct-target', 'wrong-target');
+            });
+            document.querySelectorAll('.note-marker').forEach(m => {
+                m.classList.remove('target-root', 'active', 'midi-user', 'root-marker');
+                m.style.background = ''; // Clear any manual overrides
+            });
+
+            userSelections = [];
+            isAnswerRevealed = false;
+            statusMessage.textContent = 'Find the 3rd and 5th on the fretboard!';
+            statusMessage.className = '';
+            nextBtn.classList.add('hidden');
+
+            const scaleNotes = getScale(currentKey);
+            if (!scaleNotes || scaleNotes.length === 0) throw new Error("Failed to generate scale notes.");
+            
+            renderHarmonyMap(scaleNotes);
+
+            const randomDegree = Math.floor(Math.random() * 7) + 1;
+            const diatonicChord = MAJOR_DIATONIC_CHORDS[randomDegree - 1];
+            
+            const columns = harmonyMap.querySelectorAll('.map-col');
+            columns.forEach((col, idx) => {
+                if (idx === randomDegree - 1) col.classList.add('active-focus');
+                else col.classList.remove('active-focus');
+            });
+
+            const rootNoteFull = scaleNotes[randomDegree - 1];
+            // Expand range to cover higher octaves (E2 to B4)
+            currentRootMidi = Math.floor(Math.random() * 32) + 40; 
+            const rootBase = rootNoteFull.match(/^[A-Ga-g][b#]?/)[0];
+            while (getNoteName(currentRootMidi) !== rootBase) currentRootMidi++;
+
+            // Calculate 3rd and 5th
+            const semi3 = (diatonicChord.type === 'Major' ? 4 : 3);
+            const semi5 = (diatonicChord.type === 'Diminished' ? 6 : 7);
+
+            targetTones = [
+                { degree: 3, midi: currentRootMidi + semi3, name: getNoteName(currentRootMidi + semi3) },
+                { degree: 5, midi: currentRootMidi + semi5, name: getNoteName(currentRootMidi + semi5) }
+            ];
+
+            currentChordInfo = {
+                rootBase,
+                type: diatonicChord.type,
+                suffix: diatonicChord.suffix,
+                roman: ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii'][randomDegree - 1]
+            };
+
+            updateUI();
+            highlightRoot(currentRootMidi);
+            
+            // Pick ONE random cell among all roots
+            // Expand allowed strings to include 2nd, 3rd, 4th strings
+            const rootCells = document.querySelectorAll(`.fret[data-midi="${currentRootMidi}"]`);
+            if (rootCells.length > 0) {
+                // strings 1-6 map to indices 0-5. 
+                // We want to favor strings 2, 3, 4, 5, 6
+                const allowedStrings = ['string-1', 'string-2', 'string-3', 'string-4', 'string-5']; 
+                let filteredCells = Array.from(rootCells).filter(cell => {
+                    const parentString = cell.closest('.string');
+                    const fretNum = parseInt(cell.dataset.fret);
+                    return parentString && 
+                           allowedStrings.some(cls => parentString.classList.contains(cls)) &&
+                           fretNum >= 0 && fretNum <= 12; 
+                });
+
+                const finalCells = filteredCells.length > 0 ? filteredCells : Array.from(rootCells);
+                
+                const randomCell = pickRandom(finalCells);
+                randomCell.classList.add('target-root-fret');
+                const marker = randomCell.querySelector('.note-marker');
+                if (marker) {
+                    marker.classList.remove('hidden');
+                    marker.classList.add('target-root', 'root-marker');
+                    marker.textContent = 'R';
+                }
+            }
+
+            const rootOct = Math.floor(currentRootMidi/12) - 1;
+            const t3Oct = Math.floor(targetTones[0].midi/12) - 1;
+            const t5Oct = Math.floor(targetTones[1].midi/12) - 1;
+
+            drawStaff([
+                { note: `${rootBase}${rootOct}`, label: 'R' },
+                { note: `${targetTones[0].name}${t3Oct}`, label: '3rd' },
+                { note: `${targetTones[1].name}${t5Oct}`, label: '5th' }
+            ]);
+            playRound();
+        } catch (err) {
+            console.error(err);
+            statusMessage.innerHTML = `<span style="color: #ef4444;">Error: ${err.message}</span>`;
+        }
+    };
+
+    function updateUI() {
+        if (!currentChordInfo) return;
+        degreeText.textContent = `Degree: ${currentChordInfo.roman} (${currentChordInfo.rootBase})`;
+        chordTypeText.textContent = `Chord: ${currentChordInfo.type}`;
+        chordSymbol.textContent = `${currentChordInfo.rootBase}${currentChordInfo.suffix}`;
+        
+        intervalNameDisplay.textContent = `Complete ${currentChordInfo.rootBase} ${currentChordInfo.type}`;
+        notesDisplay.textContent = `Find: ${targetTones[0].name} (3rd) & ${targetTones[1].name} (5th)`;
+    }
+
+    function renderHarmonyMap(scaleNotes) {
+        harmonyMap.innerHTML = '';
+        scaleNotes.forEach((noteFull, idx) => {
+            const noteBase = noteFull.match(/^[A-Ga-g][b#]?/)[0];
+            const chord = MAJOR_DIATONIC_CHORDS[idx];
+            const roman = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'][idx];
+            const col = document.createElement('div');
+            col.className = 'map-col';
+            col.innerHTML = `
+                <div class="map-chord">${chord.type === 'Major' ? 'M7' : (chord.type === 'Minor' ? 'm7' : 'm7b5')}</div>
+                <div class="map-note">${noteBase}</div>
+                <div class="map-degree">${idx + 1}</div>
+                <div class="map-roman">${roman}</div>
+            `;
+            harmonyMap.appendChild(col);
+        });
+    }
+
+    function drawStaff(notes) {
+        const g = container.querySelector('#staff-notes');
+        if (!g) return;
+        g.innerHTML = '';
+        const midiToY = (noteStr) => {
+            const noteName = noteStr.match(/^[A-Ga-g][b#]?/)[0];
+            const octave = parseInt(noteStr.slice(-1));
+            const staffSteps = { 'C': 0, 'D': 1, 'E': 2, 'F': 3, 'G': 4, 'A': 5, 'B': 6 };
+            const rootSteps = staffSteps[noteName[0]];
+            // Apply visual +2 octave offset so E2-Eb3 notes sit on the staff (E4-Eb5 style)
+            const totalSteps = (octave - 2) * 7 + rootSteps - 6; 
+            return 70 - (totalSteps * 7.5);
+        };
+
+        notes.forEach((obj, idx) => {
+            const y = midiToY(obj.note);
+            const x = 70 + idx * 50;
+            if (y <= 30 || y >= 110) {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", x - 15); line.setAttribute("y1", y <= 30 ? 25 : 115);
+                line.setAttribute("x2", x + 15); line.setAttribute("y2", y <= 30 ? 25 : 115);
+                line.setAttribute("stroke", "#bbb");
+                g.appendChild(line);
+            }
+            const ellipse = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+            ellipse.setAttribute("cx", x); ellipse.setAttribute("cy", y);
+            ellipse.setAttribute("rx", 7); ellipse.setAttribute("ry", 5);
+            ellipse.setAttribute("fill", idx === 0 ? "var(--primary)" : "#333");
+            g.appendChild(ellipse);
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", x); text.setAttribute("y", y - 12);
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("fill", idx === 0 ? "var(--primary)" : "#666");
+            text.setAttribute("font-size", "10");
+            text.setAttribute("font-weight", "bold");
+            text.textContent = obj.label;
+            g.appendChild(text);
+        });
+    }
+
+    const playRound = () => {
+        stopAll();
+        const rootOct = Math.floor(currentRootMidi/12) - 1;
+        const t3Oct = Math.floor(targetTones[0].midi/12) - 1;
+        const t5Oct = Math.floor(targetTones[1].midi/12) - 1;
+        const notes = [`${currentChordInfo.rootBase}${rootOct}`, `${targetTones[0].name}${t3Oct}`, `${targetTones[1].name}${t5Oct}`];
+        playChord(notes, '2n');
+    };
+
+    playBtn.addEventListener('click', () => {
+        if (!currentRootMidi) generateRound();
+        else playRound();
+    });
+
+    nextBtn.addEventListener('click', generateRound);
+
+    onFretClick(({ midi, element }) => {
+        if (isAnswerRevealed || !currentRootMidi) return;
+        
+        // Prevent double selecting same fret
+        if (userSelections.some(s => s.element === element)) return;
+
+        userSelections.push({ midi, element });
+        
+        // Visual feedback for click
+        const marker = element.querySelector('.note-marker');
+        if (marker) {
+            marker.classList.remove('hidden');
+            marker.classList.add('active', 'midi-user');
+            marker.textContent = userSelections.length === 1 ? '3' : '5';
+        }
+
+        if (userSelections.length === 2) {
+            validateSelections();
+        }
+    });
+
+    function validateSelections() {
+        isAnswerRevealed = true;
+        const selectedNoteNames = userSelections.map(s => getNoteName(s.midi));
+        const targetNoteNames = targetTones.map(t => t.name);
+        
+        // Check if the user's selections contain both the target 3rd and 5th note names
+        const allCorrect = targetNoteNames.every(name => selectedNoteNames.includes(name));
+
+        if (allCorrect) {
+            statusMessage.textContent = "Perfect Shape! You completed the chord.";
+            statusMessage.className = 'status-correct';
+            userSelections.forEach(s => s.element.classList.add('correct-target'));
+        } else {
+            statusMessage.innerHTML = "Incorrect Shape.<br>All correct 3rd and 5th positions are now shown.";
+            statusMessage.className = 'status-wrong';
+            userSelections.forEach(s => {
+                if (targetNoteNames.includes(getNoteName(s.midi))) s.element.classList.add('correct-target');
+                else s.element.classList.add('wrong-target');
+            });
+        }
+
+        const targetMidis = targetTones.map(t => t.midi); // Keep for original octave styling
+
+        // Highlight ALL occurrences of the target notes (3rd and 5th)
+        targetTones.forEach(target => {
+            const allMatchingFrets = document.querySelectorAll(`.fret[data-note="${target.name}"]`);
+            allMatchingFrets.forEach(cell => {
+                const marker = cell.querySelector('.note-marker');
+                if (marker) {
+                    marker.classList.remove('hidden', 'midi-user');
+                    marker.classList.add('active');
+                    
+                    // Distinguish between the 'answer' octaves and 'other' octaves
+                    if (targetMidis.includes(parseInt(cell.dataset.midi))) {
+                        cell.classList.add('correct-target');
+                        marker.style.background = 'var(--primary)'; // Dark indigo for the target octave
+                        marker.style.opacity = '1';
+                    } else {
+                        // Other octaves - slightly dimmer or different look
+                        marker.style.background = 'rgba(99, 102, 241, 0.4)'; 
+                        marker.style.border = '1px dashed var(--primary)';
+                        marker.style.opacity = '0.7';
+                    }
+                    marker.textContent = target.degree;
+                }
+            });
+        });
+
+        playRound();
+        nextBtn.classList.remove('hidden');
+    }
+}
+
+// --- js/modes/mode7.js ---
+// js/modes/mode7.js
+
+
+
+
+function mode7_render(container, currentKey) {
+    container.innerHTML = `
+        <div class="mode-container builder-mode">
+            <!-- Professional Dashboard -->
+            <div class="builder-dashboard glass">
+                <div class="dashboard-main">
+                    <div class="chord-info-pill">
+                        <div id="identified-chord-name" class="chord-name-compact">No Notes Selected</div>
+                        <div id="identified-chord-details" class="chord-details-compact">Select frets...</div>
+                    </div>
+                    <div class="dashboard-visualizer">
+                        <canvas id="lissajous-canvas" width="80" height="80"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sleek Action Bar (Floating above Fretboard) -->
+            <div class="action-pill-bar">
+                <button id="add-chord-btn" class="pill-btn primary ripple" disabled>
+                    <i data-lucide="plus"></i> <span>Add to Progression</span>
+                </button>
+                <button id="clear-selection-btn" class="pill-btn outline ripple" title="Clear Selection">
+                    <i data-lucide="rotate-ccw"></i>
+                </button>
+                <div class="pill-divider"></div>
+                <button id="play-all-btn" class="pill-btn secondary ripple" disabled>
+                    <i data-lucide="play"></i> <span>Play</span>
+                </button>
+                <button id="loop-toggle-btn" class="pill-btn outline ripple" title="Toggle Loop">
+                    <i data-lucide="repeat"></i>
+                </button>
+            </div>
+
+            <div id="fretboard-container-mode7" class="builder-fretboard-large glass"></div>
+
+            <!-- Compact Quick Selector Grid -->
+            <div class="quick-selector-grid card glass">
+                <div class="selector-section">
+                    <div class="section-label">Diatonic (<span id="current-key-display"></span>)</div>
+                    <div id="diatonic-btns" class="compact-grid"></div>
+                </div>
+                <div class="selector-section">
+                    <div class="section-label">Root & Type</div>
+                    <div class="combo-grid">
+                        <div id="root-btns" class="compact-grid"></div>
+                        <div id="type-btns" class="compact-grid type-scroll"></div>
+                    </div>
+                </div>
+                <button id="add-selected-chord-btn" class="btn-ghost-small ripple">
+                    <i data-lucide="plus-circle"></i> Add Selected
+                </button>
+            </div>
+
+            <div class="progression-timeline-compact card glass">
+                <div class="timeline-header-slim">
+                    <h3 class="timeline-title">Timeline</h3>
+                    <div id="progression-stats" class="timeline-stats">0 Chords</div>
+                </div>
+                <div id="progression-list" class="progression-horizontal-scroll">
+                    <div class="empty-msg">Add chords to build sequence</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    lucide.createIcons({ root: container });
+
+    const chordNameDisplay = container.querySelector('#identified-chord-name');
+    const chordDetailsDisplay = container.querySelector('#identified-chord-details');
+    const addChordBtn = container.querySelector('#add-chord-btn');
+    const clearBtn = container.querySelector('#clear-selection-btn');
+    const playAllBtn = container.querySelector('#play-all-btn');
+    const loopBtn = container.querySelector('#loop-toggle-btn');
+    const progressionList = container.querySelector('#progression-list');
+    const statsDisplay = container.querySelector('#progression-stats');
+    const canvas = container.querySelector('#lissajous-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let selectedMidis = new Set();
+    let selectedCells = []; 
+    let playbackMidis = null; 
+    let playbackChord = null; 
+    let isGuidanceActive = false; // New: track if quick selector guidance is on
+    let progression = [];
+    let isPlaying = false;
+    let isLooping = false; // New: track loop state
+    let animationId;
+
+    initFretboard('fretboard-container-mode7');
+
+    const roots = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+    const types = [
+        'Major', 'Minor', 'Sus4', 'Sus2', 'Augmented', 'Diminished',
+        'Dom7', 'Maj7', 'Min7', 'Dim7', 'm7b5',
+        '6', 'm6', 'add9', '9', 'Maj9', 'Min9'
+    ];
+
+    let currentQuickRoot = 'C';
+    let currentQuickType = 'Major';
+
+    const rootContainer = container.querySelector('#root-btns');
+    const typeContainer = container.querySelector('#type-btns');
+    const diatonicContainer = container.querySelector('#diatonic-btns');
+    const keyDisplay = container.querySelector('#current-key-display');
+    const addSelectedBtn = container.querySelector('#add-selected-chord-btn');
+
+    keyDisplay.textContent = `${currentKey} Major`;
+
+    // Render Diatonic Buttons
+    Promise.resolve({ MAJOR_DIATONIC_CHORDS, getScale, getChordNotes }).then(mt => {
+        const diatonicInfo = mt.MAJOR_DIATONIC_CHORDS;
+        const scaleNotes = mt.getScale(currentKey);
+
+        diatonicInfo.forEach((info, idx) => {
+            const rootName = scaleNotes[idx].match(/^[A-Ga-g][b#]?/)[0];
+            const btn = document.createElement('button');
+            btn.className = 'mini-btn degree-btn';
+            btn.innerHTML = `<span class="degree-roman">${['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'][idx]}</span><br>${rootName}${info.suffix}`;
+            btn.onclick = () => {
+                currentQuickRoot = rootName;
+                currentQuickType = info.type;
+                
+                // Update other buttons
+                container.querySelectorAll('.mini-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Find matching root and type buttons to sync UI
+                container.querySelectorAll('#root-btns .mini-btn').forEach(b => {
+                    if (b.textContent === rootName) b.classList.add('active');
+                });
+                const targetTypeText = info.type.replace('Major', 'Maj').replace('Minor', 'Min');
+                container.querySelectorAll('#type-btns .mini-btn').forEach(b => {
+                    if (b.textContent === targetTypeText) b.classList.add('active');
+                });
+
+                highlightQuickChord();
+            };
+            diatonicContainer.appendChild(btn);
+        });
+    });
+
+    // Render Quick Select Buttons
+    roots.forEach(r => {
+        const btn = document.createElement('button');
+        btn.className = `mini-btn ${r === currentQuickRoot ? 'active' : ''}`;
+        btn.textContent = r;
+        btn.onclick = () => {
+            currentQuickRoot = r;
+            container.querySelectorAll('#root-btns .mini-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            highlightQuickChord();
+        };
+        rootContainer.appendChild(btn);
+    });
+
+    types.forEach(t => {
+        const btn = document.createElement('button');
+        btn.className = `mini-btn ${t === currentQuickType ? 'active' : ''}`;
+        btn.textContent = t.replace('Major', 'Maj').replace('Minor', 'Min');
+        btn.onclick = () => {
+            currentQuickType = t;
+            container.querySelectorAll('#type-btns .mini-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            highlightQuickChord();
+        };
+        typeContainer.appendChild(btn);
+    });
+
+    const highlightQuickChord = () => {
+        if (isPlaying) return;
+        selectedMidis.clear();
+        selectedCells = [];
+        isGuidanceActive = true;
+        
+        // Reset fret states
+        document.querySelectorAll('.fret').forEach(f => {
+            f.classList.remove('midi-user', 'selected', 'candidate', 'dimmed');
+            const m = f.querySelector('.note-marker');
+            if (m) m.classList.add('hidden');
+        });
+
+        // Get chord notes from musicTheory
+        Promise.resolve({ MAJOR_DIATONIC_CHORDS, getScale, getChordNotes }).then(mt => {
+            const chordNotes = mt.getChordNotes(currentQuickRoot, currentQuickType);
+            const noteNames = chordNotes.map(n => n.match(/^[A-Ga-g][b#]?/)[0]);
+            
+            document.querySelectorAll('.fret').forEach(fret => {
+                const noteName = fret.dataset.note;
+                if (noteNames.includes(noteName)) {
+                    fret.classList.add('candidate');
+                    const marker = fret.querySelector('.note-marker');
+                    if (marker) marker.classList.remove('hidden');
+                }
+            });
+            updateAnalysis();
+            // Preview sound
+            const previewMidis = Array.from(new Set(document.querySelectorAll('.fret.candidate')).values())
+                .slice(0, 4) // Play a few representative notes
+                .map(f => parseInt(f.dataset.midi));
+            playChord(previewMidis);
+        });
+    };
+
+    addSelectedBtn.onclick = () => {
+        addChordBtn.click();
+    };
+
+    const updateAnalysis = () => {
+        const midis = Array.from(selectedMidis);
+        const activeChord = playbackChord || (midis.length > 0 ? identifyChord(midis) : null);
+
+        if (!activeChord && midis.length === 0) {
+            chordNameDisplay.textContent = 'No Notes Selected';
+            chordDetailsDisplay.textContent = 'Select at least 2-3 notes';
+            chordNameDisplay.classList.remove('playback-active');
+            addChordBtn.disabled = true;
+        } else if (activeChord) {
+            chordNameDisplay.textContent = activeChord.name || 'Cluster';
+            chordDetailsDisplay.textContent = activeChord.details || `Type: ${activeChord.type} | Root: ${activeChord.root}`;
+            if (playbackChord) chordNameDisplay.classList.add('playback-active');
+            else chordNameDisplay.classList.remove('playback-active');
+            addChordBtn.disabled = midis.length === 0;
+        }
+    };
+
+    onFretClick(({ midi, element }) => {
+        if (isPlaying) return;
+
+        const stringIdx = element.closest('.string').classList[1].split('-')[1];
+        const fretIdx = element.dataset.fret;
+        const cellId = `s${stringIdx}f${fretIdx}`;
+        const marker = element.querySelector('.note-marker');
+
+        if (isGuidanceActive) {
+            // Guided selection mode
+            if (element.classList.contains('candidate') || element.classList.contains('selected')) {
+                const isAlreadySelected = element.classList.contains('selected');
+                
+                if (isAlreadySelected) {
+                    element.classList.remove('selected');
+                    element.classList.add('candidate');
+                    selectedMidis.delete(midi);
+                    selectedCells = selectedCells.filter(c => c.id !== cellId);
+                } else {
+                    element.classList.remove('candidate', 'dimmed');
+                    element.classList.add('selected');
+                    selectedMidis.add(midi);
+                    selectedCells.push({ id: cellId, midi, string: stringIdx, fret: fretIdx });
+                    playChord([midi]);
+                }
+
+                // Update dimmed state for other candidates
+                const hasAnySelected = container.querySelectorAll('.fret.selected').length > 0;
+                container.querySelectorAll('.fret.candidate').forEach(f => {
+                    if (hasAnySelected) f.classList.add('dimmed');
+                    else f.classList.remove('dimmed');
+                });
+                
+                updateAnalysis();
+                return;
+            }
+        }
+
+        // Normal mode or non-candidate click
+        const existingIdx = selectedCells.findIndex(c => c.id === cellId);
+        if (existingIdx !== -1) {
+            selectedCells.splice(existingIdx, 1);
+            selectedMidis.delete(midi);
+            marker.classList.add('hidden');
+            element.classList.remove('midi-user');
+            element.classList.remove('selected');
+        } else {
+            selectedCells.push({ id: cellId, midi, string: stringIdx, fret: fretIdx });
+            selectedMidis.add(midi);
+            marker.classList.remove('hidden');
+            marker.classList.add('active', 'midi-user');
+            element.classList.add('midi-user', 'selected');
+            playChord([midi]);
+            isGuidanceActive = false; // Disable guidance if user starts manual picking
+        }
+        updateAnalysis();
+    });
+
+    clearBtn.addEventListener('click', () => {
+        selectedMidis.clear();
+        selectedCells = [];
+        isGuidanceActive = false;
+        document.querySelectorAll('.fret').forEach(f => {
+            f.classList.remove('midi-user', 'candidate', 'selected', 'dimmed');
+            const m = f.querySelector('.note-marker');
+            if (m) m.classList.add('hidden');
+        });
+        updateAnalysis();
+    });
+
+    addChordBtn.addEventListener('click', () => {
+        if (selectedCells.length === 0) return;
+        const midis = Array.from(selectedMidis);
+        const result = identifyChord(midis);
+        const chordObj = {
+            id: Date.now(),
+            name: result.name || 'Cluster',
+            midis: [...midis],
+            cells: [...selectedCells], // Save exact positions
+            details: result.type ? `Type: ${result.type} | Root: ${result.root}` : 'Unknown combination'
+        };
+        
+        progression.push(chordObj);
+        renderProgression();
+        clearBtn.click();
+    });
+
+    const renderProgression = () => {
+        if (progression.length === 0) {
+            progressionList.innerHTML = `
+                <div class="empty-timeline-message">
+                    <i data-lucide="info"></i>
+                    Add chords to see them here
+                </div>
+            `;
+            playAllBtn.disabled = true;
+            statsDisplay.textContent = '0 Chords';
+            lucide.createIcons({ root: progressionList });
+            return;
+        }
+
+        playAllBtn.disabled = false;
+        statsDisplay.textContent = `${progression.length} Chords`;
+        progressionList.innerHTML = '';
+        
+        progression.forEach((chord, index) => {
+            const card = document.createElement('div');
+            card.className = 'chord-card glass';
+            card.innerHTML = `
+                <div class="card-index">${index + 1}</div>
+                <div class="card-name">${chord.name}</div>
+                <div class="card-details">${chord.details}</div>
+                <div class="card-actions">
+                    <button class="play-card-btn" title="Play">
+                        <i data-lucide="play" size="16"></i>
+                    </button>
+                    <button class="delete-card-btn" title="Delete">
+                        <i data-lucide="x" size="16"></i>
+                    </button>
+                </div>
+            `;
+            
+            card.querySelector('.play-card-btn').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (isPlaying) return;
+                
+                // Temporary playback state for individual play
+                playbackMidis = chord.midis;
+                playbackChord = { name: chord.name, details: chord.details };
+                updateAnalysis();
+                
+                // Highlight specific frets
+                chord.cells.forEach(cell => {
+                    const el = document.querySelector(`.string-${cell.string} .fret[data-fret="${cell.fret}"]`);
+                    if (el) el.classList.add('playback-highlight');
+                });
+
+                playChord(chord.midis);
+                card.classList.add('playing');
+                
+                setTimeout(() => {
+                    card.classList.remove('playing');
+                    chord.cells.forEach(cell => {
+                        const el = document.querySelector(`.string-${cell.string} .fret[data-fret="${cell.fret}"]`);
+                        if (el) el.classList.remove('playback-highlight');
+                    });
+                    playbackMidis = null;
+                    playbackChord = null;
+                    updateAnalysis();
+                }, 1500);
+            });
+
+            card.querySelector('.delete-card-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                progression = progression.filter(c => c.id !== chord.id);
+                renderProgression();
+            });
+
+            progressionList.appendChild(card);
+        });
+
+        lucide.createIcons({ root: progressionList });
+    };
+
+    const drawLissajous = () => {
+        if (!container.isConnected) {
+            cancelAnimationFrame(animationId);
+            return;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Prioritize playbackMidis if currently playing a progression
+        const activeMidis = playbackMidis || Array.from(selectedMidis);
+        const midis = [...activeMidis].sort((a, b) => a - b);
+        
+        const time = Date.now() / 1000;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = canvas.width * 0.38;
+
+        if (midis.length >= 2) {
+            // Calculate ratio between the lowest and highest selected notes
+            const f1 = 440 * Math.pow(2, (midis[0] - 69) / 12);
+            const f2 = 440 * Math.pow(2, (midis[midis.length-1] - 69) / 12);
+            const ratio = f1 / f2;
+
+            ctx.beginPath();
+            ctx.strokeStyle = '#a78bfa'; // Brighter purple
+            ctx.lineWidth = 2.5;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#8b5cf6';
+
+            // Draw a longer, smoother path
+            for (let t = 0; t < Math.PI * 4; t += 0.02) {
+                const x = centerX + radius * Math.sin(t + time * 2);
+                const y = centerY + radius * Math.sin(t / ratio + time * 1.5);
+                if (t === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        } else if (midis.length === 1) {
+            // Pulse circle for single note
+            const radiusPulse = radius * 0.8 + Math.sin(time * 8) * 4;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radiusPulse, 0, Math.PI * 2);
+            ctx.strokeStyle = '#34d399'; // Brighter emerald
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#10b981';
+            ctx.stroke();
+        } else {
+            // Idle state: Subtle rotating dashed circle
+            ctx.beginPath();
+            ctx.setLineDash([5, 10]);
+            ctx.arc(centerX, centerY, radius * 0.7, time, time + Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        animationId = requestAnimationFrame(drawLissajous);
+    };
+
+    drawLissajous();
+
+    loopBtn.addEventListener('click', () => {
+        isLooping = !isLooping;
+        loopBtn.classList.toggle('active', isLooping);
+        if (isLooping) {
+            loopBtn.style.color = 'var(--secondary-glow)';
+            loopBtn.style.borderColor = 'var(--secondary-glow)';
+        } else {
+            loopBtn.style.color = '';
+            loopBtn.style.borderColor = '';
+        }
+    });
+
+    playAllBtn.addEventListener('click', async () => {
+        if (isPlaying) {
+            // Stop playback
+            isPlaying = false;
+            return;
+        }
+        
+        if (progression.length === 0) return;
+        
+        isPlaying = true;
+        playAllBtn.innerHTML = '<i data-lucide="square"></i> Stop';
+        lucide.createIcons({ root: playAllBtn });
+
+        const runPlayback = async () => {
+            for (let i = 0; i < progression.length; i++) {
+                if (!isPlaying) break;
+
+                const chord = progression[i];
+                const card = progressionList.children[i];
+                
+                playbackMidis = chord.midis;
+                playbackChord = { name: chord.name, details: chord.details };
+                updateAnalysis();
+
+                if (card) card.classList.add('active-play');
+                
+                chord.cells.forEach(cell => {
+                    const el = document.querySelector(`.string-${cell.string} .fret[data-fret="${cell.fret}"]`);
+                    if (el) el.classList.add('playback-highlight');
+                });
+
+                playChord(chord.midis);
+                
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                if (card) card.classList.remove('active-play');
+                chord.cells.forEach(cell => {
+                    const el = document.querySelector(`.string-${cell.string} .fret[data-fret="${cell.fret}"]`);
+                    if (el) el.classList.remove('playback-highlight');
+                });
+            }
+        };
+
+        do {
+            await runPlayback();
+        } while (isLooping && isPlaying);
+        
+        isPlaying = false;
+        playbackMidis = null;
+        playbackChord = null;
+        updateAnalysis();
+        playAllBtn.innerHTML = '<i data-lucide="play-circle"></i> Play';
+        lucide.createIcons({ root: playAllBtn });
+    });
+}
+
+// --- js/modes/mode8.js ---
+
+
+function mode8_render(container, currentKey) {
+    container.innerHTML = `
+        <div class="mode-container caged-mode">
+            <div class="builder-dashboard glass">
+                <div class="dashboard-main caged-dashboard">
+                    <div class="chord-info-pill">
+                        <div id="caged-chord-name" class="chord-name-compact">C Major</div>
+                        <div id="caged-shape-name" class="chord-details-compact">C-Form</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Root Selector -->
+            <div class="caged-controls card glass">
+                <div class="selector-section">
+                    <div class="section-label">Root Note</div>
+                    <div id="caged-root-btns" class="compact-grid"></div>
+                </div>
+                
+                <div class="selector-section">
+                    <div class="section-label">CAGED Form</div>
+                    <div id="caged-shape-btns" class="caged-tabs">
+                        <button class="caged-tab active" data-shape="C">C Form</button>
+                        <button class="caged-tab" data-shape="A">A Form</button>
+                        <button class="caged-tab" data-shape="G">G Form</button>
+                        <button class="caged-tab" data-shape="E">E Form</button>
+                        <button class="caged-tab" data-shape="D">D Form</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="fretboard-container-mode8" class="builder-fretboard-large glass"></div>
+        </div>
+    `;
+
+    initFretboard('fretboard-container-mode8');
+
+    const roots = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+    let currentRoot = 'C';
+    let currentShape = 'C';
+
+    const rootBtnsContainer = document.getElementById('caged-root-btns');
+    roots.forEach(r => {
+        const btn = document.createElement('button');
+        btn.className = `mini-btn ${r === currentRoot ? 'active' : ''}`;
+        btn.textContent = r;
+        btn.addEventListener('click', () => {
+            currentRoot = r;
+            rootBtnsContainer.querySelectorAll('.mini-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            updateCAGED();
+        });
+        rootBtnsContainer.appendChild(btn);
+    });
+
+    const shapeBtns = document.querySelectorAll('.caged-tab');
+    shapeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentShape = btn.dataset.shape;
+            shapeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            updateCAGED();
+        });
+    });
+
+    const cagedShapes = {
+        'C': { rootString: 4, offsets: { 4: { f: 0, r: 'R' }, 3: { f: -1, r: '3' }, 2: { f: -3, r: '5' }, 1: { f: -2, r: 'R' }, 0: { f: -3, r: '3' } } },
+        'A': { rootString: 4, offsets: { 4: { f: 0, r: 'R' }, 3: { f: 2, r: '5' }, 2: { f: 2, r: 'R' }, 1: { f: 2, r: '3' }, 0: { f: 0, r: '5' } } },
+        'G': { rootString: 5, offsets: { 5: { f: 0, r: 'R' }, 4: { f: -1, r: '3' }, 3: { f: -3, r: '5' }, 2: { f: -3, r: 'R' }, 1: { f: -3, r: '3' }, 0: { f: 0, r: 'R' } } },
+        'E': { rootString: 5, offsets: { 5: { f: 0, r: 'R' }, 4: { f: 2, r: '5' }, 3: { f: 2, r: 'R' }, 2: { f: 1, r: '3' }, 1: { f: 0, r: '5' }, 0: { f: 0, r: 'R' } } },
+        'D': { rootString: 3, offsets: { 3: { f: 0, r: 'R' }, 2: { f: 2, r: '5' }, 1: { f: 3, r: 'R' }, 0: { f: 2, r: '3' } } }
+    };
+
+    function updateCAGED() {
+        document.getElementById('caged-chord-name').textContent = `${currentRoot} Major`;
+        document.getElementById('caged-shape-name').textContent = `${currentShape}-Form`;
+        clearFretboard();
+
+        // Clear previous CAGED custom classes
+        document.querySelectorAll('#fretboard-container-mode8 .fret').forEach(f => {
+            f.classList.remove('caged-root', 'caged-chord-tone');
+            const m = f.querySelector('.note-marker');
+            if (m) m.classList.remove('caged-root-marker', 'caged-chord-tone-marker');
+        });
+
+        const shapeConfig = cagedShapes[currentShape];
+        const minOffset = Math.min(...Object.values(shapeConfig.offsets).map(o => o.f));
+        
+        // Find the lowest valid anchor fret for the root note on the rootString
+        const stringDiv = document.querySelector(`#fretboard-container-mode8 .string-${shapeConfig.rootString}`);
+        const frets = stringDiv.querySelectorAll('.fret');
+        
+        let anchorFret = -1;
+        // Search from fret 0 upwards
+        for (let i = 0; i < frets.length; i++) {
+            const f = frets[i];
+            // Get base note without octave. data-note might be "C4", "C#3", etc.
+            // But wait, fretboard.js getNoteName returns "C", "C#".
+            const noteName = f.dataset.note.match(/^[A-Ga-g][b#]?/)[0];
+            if (noteName === currentRoot) {
+                const fretNum = parseInt(f.dataset.fret);
+                if (fretNum + minOffset >= 0 && fretNum + minOffset <= 15) { // Ensure entire shape fits
+                    anchorFret = fretNum;
+                    break; // Pick the first valid one
+                }
+            }
+        }
+
+        if (anchorFret === -1) {
+            console.error("Could not find a valid anchor fret for this shape on the fretboard.");
+            return;
+        }
+
+        // Draw the shape
+        Object.keys(shapeConfig.offsets).forEach(strIdx => {
+            const offsetInfo = shapeConfig.offsets[strIdx];
+            const targetFretNum = anchorFret + offsetInfo.f;
+            
+            const cell = document.querySelector(`#fretboard-container-mode8 .string-${strIdx} .fret[data-fret="${targetFretNum}"]`);
+            if (cell) {
+                const marker = cell.querySelector('.note-marker');
+                marker.classList.remove('hidden');
+                
+                if (offsetInfo.r === 'R') {
+                    cell.classList.add('caged-root');
+                    marker.classList.add('caged-root-marker');
+                } else {
+                    cell.classList.add('caged-chord-tone');
+                    marker.classList.add('caged-chord-tone-marker');
+                }
+                marker.textContent = offsetInfo.r; // Display interval (R, 3, 5)
+            }
+        });
+    }
+
+    // Initial render
+    setTimeout(updateCAGED, 100);
+}
+
+// --- js/app.js ---
+// js/app.js
+
+
+
+
+
+
+
+
+
+
+
+var currentKey = 'C';
+var currentMode = 'mode1';
+var midiInitialized = false;
+
+var modes = {
+    'mode1': { title: 'Note Mastery', description: 'Identify the note or chord being played.', render: mode1_render },
+    'mode2': { title: 'Chord Progressions', description: 'Listen to the progression and identify the chords.', render: mode2_render },
+    'mode3': { title: 'Relative Melody', description: 'Identify the melody using relative scale degrees (1, 2, 3...).', render: mode3_render },
+    'mode4': { title: 'Melody & Chords', description: 'Listen to a melody and match the chord progression that fits.', render: mode4_render },
+    'mode5': { title: 'Chord Explorer', description: 'Visualize triads across different string sets to learn their shapes.', render: mode5_render },
+    'mode6': { title: 'Fretboard Geometry', description: 'Master the spatial relationships between notes on the neck.', render: mode6_render },
+    'mode7': { title: 'Harmony Builder', description: 'Build chord progressions', render: mode7_render },
+    'mode8': { title: 'CAGED System Master', description: 'Visualize the 5 CAGED shapes across the fretboard.', render: mode8_render }
+};
+
+function initApp() {
+    const navBtns = document.querySelectorAll('.nav-btn');
+    const keySelector = document.getElementById('key-selector');
+    const viewContainer = document.getElementById('view-container');
+    const viewTitle = document.getElementById('view-title');
+    const viewDescription = document.getElementById('view-description');
+
+    if (!viewContainer) {
+        console.error("Critical error: view-container not found.");
+        return;
+    }
+
+    // Handle Navigation
+    navBtns.forEach(btn => {
+        btn.addEventListener('click', async () => {
+            // 1. UI Feedback Immediate (No await)
+            navBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            currentMode = btn.dataset.mode;
+            if (viewTitle) viewTitle.textContent = modes[currentMode].title;
+            if (viewDescription) viewDescription.textContent = modes[currentMode].description;
+            
+            renderCurrentMode();
+
+            // 2. Audio/MIDI Initialization in background
+            try {
+                initAudio(); // Don't await here to prevent blocking UI
+                
+                if (!midiInitialized) {
+                    initMidi((status) => {
+                        const pill = document.getElementById('midi-status');
+                        const text = document.getElementById('midi-status-text');
+                        if (pill && text) {
+                            text.textContent = `MIDI: ${status}`;
+                            if (status === 'Connected') pill.classList.add('connected');
+                            else pill.classList.remove('connected');
+                            lucide.createIcons({ root: pill });
+                        }
+                    });
+                    midiInitialized = true;
+                }
+            } catch (err) {
+                console.warn("Async init failed", err);
+            }
+        });
+    });
+
+    // Handle Global Key Change
+    if (keySelector) {
+        keySelector.addEventListener('change', (e) => {
+            currentKey = e.target.value;
+            renderCurrentMode(); 
+        });
+    }
+
+    function renderCurrentMode() {
+        try {
+            stopAll();
+            viewContainer.innerHTML = '';
+            
+            // Hide global fretboard for modes that render their own custom fretboards
+            const globalFretboard = document.querySelector('main > #fretboard-container');
+            if (globalFretboard) {
+                if (currentMode === 'mode7' || currentMode === 'mode8') {
+                    globalFretboard.style.display = 'none';
+                } else {
+                    globalFretboard.style.display = 'block';
+                }
+            }
+
+            modes[currentMode].render(viewContainer, currentKey);
+            lucide.createIcons();
+        } catch (err) {
+            console.error("Render failed", err);
+            viewContainer.innerHTML = `<p style="color:red; padding: 2rem;">Render Error: ${err.message}</p>`;
+        }
+    }
+
+    // Initial Render
+    renderCurrentMode();
+}
+
+// Support both early and late script loading
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    } catch(e) {
+        var errEl = document.getElementById('error-content');
+        var errBox = document.getElementById('error-display');
+        if (errEl && errBox) {
+            errBox.style.display = 'block';
+            errEl.innerText += 'INIT: ' + e.message + '\n' + (e.stack || '') + '\n';
+        }
+        console.error('Auralis Init Error:', e);
+    }
+    </script>
+</body>
+
+</html>

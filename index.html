@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auralis - Premium Ear Training</title>
+    <meta name="description" content="Master your musical ear with note, chord progression, and melody training.">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Tone.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="error-display" style="display: none; position: fixed; top: 0; left: 0; width: 100%; background: rgba(220, 38, 38, 0.95); color: white; z-index: 10000; padding: 15px; font-family: monospace; font-size: 12px; max-height: 30vh; overflow-y: auto; border-bottom: 2px solid white;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+            <strong>System Error</strong>
+            <button onclick="this.parentElement.parentElement.style.display='none'" style="background: white; color: red; border: none; padding: 2px 8px; cursor: pointer; border-radius: 4px;">Close</button>
+        </div>
+        <div id="error-content"></div>
+    </div>
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const display = document.getElementById('error-display');
+            const content = document.getElementById('error-content');
+            if (display && content) {
+                display.style.display = 'block';
+                content.innerText += msg + ' (Line: ' + lineNo + ')\n';
+            }
+            return false;
+        };
+    </script>
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <nav id="sidebar">
+            <div class="logo">
+                <i data-lucide="headphones"></i>
+                <span>Auralis</span>
+            </div>
+            
+            <div class="nav-links">
+                <div class="nav-category">Ear Training</div>
+                <button class="nav-btn active" data-mode="mode1">
+                    <i data-lucide="music"></i>
+                    <span>Note Mastery</span>
+                </button>
+                <button class="nav-btn" data-mode="mode2">
+                    <i data-lucide="layers"></i>
+                    <span>Chord Progressions</span>
+                </button>
+                <button class="nav-btn" data-mode="mode3">
+                    <i data-lucide="activity"></i>
+                    <span>Relative Melody</span>
+                </button>
+                <button class="nav-btn" data-mode="mode4">
+                    <i data-lucide="music"></i>
+                    <span>Melody & Chords</span>
+                </button>
+
+                <div class="nav-category">Learning & Theory</div>
+                <button class="nav-btn" data-mode="mode5">
+                    <i data-lucide="book-open"></i>
+                    <span>Chord Explorer</span>
+                </button>
+                <button class="nav-btn" data-mode="mode6">
+                    <i data-lucide="grid"></i>
+                    <span>Fretboard Geometry</span>
+                </button>
+                <button class="nav-btn" data-mode="mode7">
+                    <i data-lucide="blocks"></i>
+                    <span>Harmony Builder</span>
+                </button>
+                <button class="nav-btn" data-mode="mode8">
+                    <i data-lucide="link"></i>
+                    <span>CAGED Master</span>
+                </button>
+            </div>
+
+            <div class="global-settings">
+                <label for="key-selector">Global Key</label>
+                <select id="key-selector">
+                    <option value="C">C Major</option>
+                    <option value="Db">Db Major</option>
+                    <option value="D">D Major</option>
+                    <option value="Eb">Eb Major</option>
+                    <option value="E">E Major</option>
+                    <option value="F">F Major</option>
+                    <option value="Gb">Gb Major</option>
+                    <option value="G">G Major</option>
+                    <option value="Ab">Ab Major</option>
+                    <option value="A">A Major</option>
+                    <option value="Bb">Bb Major</option>
+                    <option value="B">B Major</option>
+                </select>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            <header>
+                <h1 id="view-title">Note Mastery</h1>
+                <p id="view-description">Identify the note or chord being played.</p>
+                <div id="midi-status" class="midi-status-pill">
+                    <i data-lucide="usb"></i>
+                    <span id="midi-status-text">MIDI: Checking...</span>
+                </div>
+            </header>
+
+            <div id="view-container">
+                <!-- Content will be injected here by app.js -->
+            </div>
+
+            <!-- Global Audio Feedback / Keyboard -->
+            <div id="piano-container">
+                <!-- Interactive Piano will be rendered here -->
+            </div>
+        <div id="fretboard-container"></div>
+    </main>
+</div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/musicTheory.js"></script>
+    <script type="module" src="js/audioEngine.js"></script>
+    <script type="module" src="js/app.js"></script>
+    <script>
+      lucide.createIcons();
+    </script>
+</body>
+</html>
