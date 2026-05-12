@@ -78,7 +78,8 @@ function clearAllTimeouts() {
 /**
  * Play a single note
  */
-export function playNote(note, duration = '4n', time) {
+export async function playNote(note, duration = '4n', time) {
+    if (!isInitialized) await initAudio();
     if (!isInitialized) return;
     const processedNote = typeof note === 'number' ? Tone.Frequency(note, "midi").toFrequency() : note;
     monoSynth.triggerAttackRelease(processedNote, duration, time !== undefined ? time : Tone.now());
@@ -87,14 +88,16 @@ export function playNote(note, duration = '4n', time) {
 /**
  * Play a chord
  */
-export function playChord(notes, duration = '2n', time) {
+export async function playChord(notes, duration = '2n', time) {
+    if (!isInitialized) await initAudio();
     if (!isInitialized) return;
     // Ensure all notes are converted to frequency if they are MIDI numbers
     const processedNotes = notes.map(n => typeof n === 'number' ? Tone.Frequency(n, "midi").toFrequency() : n);
     polySynth.triggerAttackRelease(processedNotes, duration, time !== undefined ? time : Tone.now());
 }
 
-export function playMidiNoteOn(midiNumber, velocity = 0.7) {
+export async function playMidiNoteOn(midiNumber, velocity = 0.7) {
+    if (!isInitialized) await initAudio();
     if (!isInitialized) return;
     const freq = Tone.Frequency(midiNumber, "midi").toFrequency();
     // Use "+0" to trigger as soon as possible in the current block
@@ -113,6 +116,7 @@ export function playMidiNoteOff(midiNumber) {
  * @param {number} bpm
  */
 export async function playProgression(progression, bpm = 90) {
+    if (!isInitialized) await initAudio();
     if (!isInitialized) return;
 
     stopAll();
@@ -133,7 +137,8 @@ export async function playProgression(progression, bpm = 90) {
  * @param {Array<string>} melody Array of note strings
  * @param {number} bpm
  */
-export function playMelody(melody, bpm = 120) {
+export async function playMelody(melody, bpm = 120) {
+    if (!isInitialized) await initAudio();
     if (!isInitialized) return;
 
     stopAll();

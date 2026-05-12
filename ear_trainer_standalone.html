@@ -1791,7 +1791,8 @@ function clearAllTimeouts() {
 /**
  * Play a single note
  */
-function playNote(note, duration = '4n', time) {
+async function playNote(note, duration = '4n', time) {
+    if (!isInitialized) await initAudio();
     if (!isInitialized) return;
     const processedNote = typeof note === 'number' ? Tone.Frequency(note, "midi").toFrequency() : note;
     monoSynth.triggerAttackRelease(processedNote, duration, time !== undefined ? time : Tone.now());
@@ -1800,14 +1801,16 @@ function playNote(note, duration = '4n', time) {
 /**
  * Play a chord
  */
-function playChord(notes, duration = '2n', time) {
+async function playChord(notes, duration = '2n', time) {
+    if (!isInitialized) await initAudio();
     if (!isInitialized) return;
     // Ensure all notes are converted to frequency if they are MIDI numbers
     const processedNotes = notes.map(n => typeof n === 'number' ? Tone.Frequency(n, "midi").toFrequency() : n);
     polySynth.triggerAttackRelease(processedNotes, duration, time !== undefined ? time : Tone.now());
 }
 
-function playMidiNoteOn(midiNumber, velocity = 0.7) {
+async function playMidiNoteOn(midiNumber, velocity = 0.7) {
+    if (!isInitialized) await initAudio();
     if (!isInitialized) return;
     const freq = Tone.Frequency(midiNumber, "midi").toFrequency();
     // Use "+0" to trigger as soon as possible in the current block
@@ -1826,6 +1829,7 @@ function playMidiNoteOff(midiNumber) {
  * @param {number} bpm
  */
 async function playProgression(progression, bpm = 90) {
+    if (!isInitialized) await initAudio();
     if (!isInitialized) return;
 
     stopAll();
@@ -1846,7 +1850,8 @@ async function playProgression(progression, bpm = 90) {
  * @param {Array<string>} melody Array of note strings
  * @param {number} bpm
  */
-function playMelody(melody, bpm = 120) {
+async function playMelody(melody, bpm = 120) {
+    if (!isInitialized) await initAudio();
     if (!isInitialized) return;
 
     stopAll();
