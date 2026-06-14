@@ -7,6 +7,7 @@ export function mode5_render(container) {
     let currentRoot = 'C';
     let currentType = 'Major';
     let currentStringSet = [0, 1, 2, 3]; // Default to 4 strings: 1, 2, 3, 4
+    let currentVoicing = 'all'; // Default voicing: All Notes
 
     const chordTypes = ['Major', 'Minor', 'Diminished', 'Augmented'];
     const chordTypeTo7th = {
@@ -25,7 +26,7 @@ export function mode5_render(container) {
 
             <div class="explorer-layout">
                 <div class="explorer-controls">
-                    <div class="settings-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="settings-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
                         <div class="setting-item">
                             <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Root Note</label>
                             <div class="custom-select-wrapper">
@@ -39,6 +40,18 @@ export function mode5_render(container) {
                             <div class="custom-select-wrapper">
                                 <select id="type-select" class="custom-select">
                                     ${chordTypes.map(t => `<option value="${t}" ${t === currentType ? 'selected' : ''}>${t}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Voicing Shape</label>
+                            <div class="custom-select-wrapper">
+                                <select id="voicing-select" class="custom-select">
+                                    <option value="all" ${currentVoicing === 'all' ? 'selected' : ''}>All Notes</option>
+                                    <option value="root" ${currentVoicing === 'root' ? 'selected' : ''}>Root Position</option>
+                                    <option value="1st" ${currentVoicing === '1st' ? 'selected' : ''}>1st Inversion</option>
+                                    <option value="2nd" ${currentVoicing === '2nd' ? 'selected' : ''}>2nd Inversion</option>
+                                    <option value="3rd" ${currentVoicing === '3rd' ? 'selected' : ''}>3rd Inversion</option>
                                 </select>
                             </div>
                         </div>
@@ -93,23 +106,112 @@ export function mode5_render(container) {
 
     const rootSelect = container.querySelector('#root-select');
     const typeSelect = container.querySelector('#type-select');
+    const voicingSelect = container.querySelector('#voicing-select');
     const playBtn = container.querySelector('#play-chord-btn');
 
     // Setup Fretboard
     initFretboard('fretboard-container');
+
+    // Helper: Highlights clustered inversion shapes rather than drawing all notes
+    const highlightVoicingShapeOnFretboard = (notes, formula, voicingMode, stringSet) => {
+        clearFretboard();
+
+        // 1. If "All Notes" or string set is not exactly 3 or 4 strings, show all notes
+        if (voicingMode === 'all' || (stringSet.length !== 3 && stringSet.length !== 4)) {
+            const labelsMap = {};
+            notes.forEach((fullNote, idx) => {
+                const noteName = fullNote.match(/^[A-Ga-g][b#]?/)[0];
+                labelsMap[noteName] = formula[idx];
+            });
+            highlightNotesOnFretboard(notes, labelsMap, stringSet);
+            return;
+        }
+
+        // 2. Sort stringSet from lowest pitch (highest index, e.g. 5 for low E) to highest pitch
+        const sortedStrings = [...stringSet].sort((a, b) => b - a);
+
+        // Map inversions to target scale degrees (Low to High string order)
+        let targetDegrees = [];
+        if (stringSet.length === 4) {
+            // Drop 2 chord voicing formulas
+            if (voicingMode === 'root') targetDegrees = [formula[0], formula[2], formula[3], formula[1]]; // R, 5, 7, 3
+            else if (voicingMode === '1st') targetDegrees = [formula[1], formula[3], formula[0], formula[2]]; // 3, 7, 1, 5
+            else if (voicingMode === '2nd') targetDegrees = [formula[2], formula[0], formula[1], formula[3]]; // 5, 1, 3, 7
+            else if (voicingMode === '3rd') targetDegrees = [formula[3], formula[1], formula[2], formula[0]]; // 7, 3, 5, 1
+        } else if (stringSet.length === 3) {
+            // Closed Triad voicing formulas
+            if (voicingMode === 'root') targetDegrees = [formula[0], formula[1], formula[2]]; // 1, 3, 5
+            else if (voicingMode === '1st') targetDegrees = [formula[1], formula[2], formula[0]]; // 3, 5, 1
+            else if (voicingMode === '2nd') targetDegrees = [formula[2], formula[0], formula[1]]; // 5, 1, 3
+        }
+
+        if (targetDegrees.length === 0) return;
+
+        // Map targetDegrees to note names
+        const stringNoteNames = targetDegrees.map(deg => {
+            const idx = formula.indexOf(deg);
+            if (idx === -1) return null;
+            return notes[idx].match(/^[A-Ga-g][b#]?/)[0];
+        });
+
+        if (stringNoteNames.includes(null)) return;
+
+        // Collect all fret cells for each note on their assigned string
+        const stringFrets = sortedStrings.map((strIdx, i) => {
+            const noteName = stringNoteNames[i];
+            const cells = document.querySelectorAll(`#fretboard-container .string-${strIdx} .fret[data-note="${noteName}"]`);
+            return Array.from(cells).map(cell => ({
+                fret: parseInt(cell.dataset.fret),
+                note: noteName,
+                degree: targetDegrees[i],
+                cell: cell
+            }));
+        });
+
+        // Generate Cartesian product (combinations of frets across the selected strings)
+        const combinations = [];
+        const generateCombos = (strIdx, currentCombo) => {
+            if (strIdx === stringFrets.length) {
+                combinations.push([...currentCombo]);
+                return;
+            }
+            stringFrets[strIdx].forEach(fretData => {
+                currentCombo.push(fretData);
+                generateCombos(strIdx + 1, currentCombo);
+                currentCombo.pop();
+            });
+        };
+        generateCombos(0, []);
+
+        // Filter valid voicing shapes where the maximum fret span is <= 4 frets (ignoring open strings 0)
+        const validCombinations = combinations.filter(combo => {
+            const frets = combo.map(c => c.fret).filter(f => f > 0);
+            if (frets.length <= 1) return true;
+            const maxFret = Math.max(...frets);
+            const minFret = Math.min(...frets);
+            return (maxFret - minFret) <= 4;
+        });
+
+        // Activate the markers for valid shape combinations
+        validCombinations.forEach(combo => {
+            combo.forEach(fretData => {
+                const marker = fretData.cell.querySelector('.note-marker');
+                if (marker) {
+                    marker.textContent = fretData.degree;
+                    marker.classList.remove('hidden');
+                    marker.classList.add('active');
+                }
+            });
+        });
+    };
 
     const updateVisualization = () => {
         const type7th = chordTypeTo7th[currentType] || currentType;
         const notes = getChordNotes(currentRoot, type7th, 4); // Use 4th octave for staff
         const formula = getChordFormula(type7th);
         
-        // Fretboard highlight
-        const labelsMap = {};
-        notes.forEach((fullNote, idx) => {
-            const noteName = fullNote.match(/^[A-Ga-g][b#]?/)[0];
-            labelsMap[noteName] = formula[idx];
-        });
-        highlightNotesOnFretboard(notes, labelsMap, currentStringSet);
+        // Fretboard highlight using voicing filter
+        highlightVoicingShapeOnFretboard(notes, formula, currentVoicing, currentStringSet);
 
         // Update Formula UI
         const formulaContainer = container.querySelector('#chord-formula-container');
@@ -188,6 +290,11 @@ export function mode5_render(container) {
 
     typeSelect.addEventListener('change', (e) => {
         currentType = e.target.value;
+        updateVisualization();
+    });
+
+    voicingSelect.addEventListener('change', (e) => {
+        currentVoicing = e.target.value;
         updateVisualization();
     });
 
