@@ -1,9 +1,9 @@
 // js/modes/mode5.js
 import { stopAll, playChord } from '../audioEngine.js';
-import { getChordNotes, NOTES, getChordFormula } from '../musicTheory.js';
+import { getChordNotes, NOTES, getChordFormula, MAJOR_DIATONIC_CHORDS, getScale } from '../musicTheory.js';
 import { initFretboard, highlightNotesOnFretboard, clearFretboard } from '../fretboard.js';
 
-export function mode5_render(container) {
+export function mode5_render(container, currentKey = 'C') {
     let currentRoot = 'C';
     let currentType = 'Major';
     let currentStringSet = [0, 1, 2, 3]; // Default to 4 strings: 1, 2, 3, 4
@@ -18,9 +18,19 @@ export function mode5_render(container) {
 
     const html = `
         <div class="glass-panel chord-explorer">
-            <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="text-align: center; margin-bottom: 1.5rem;">
                 <h2>Chord Explorer</h2>
                 <p>Master 7th chords and their inversion shapes across the neck.</p>
+            </div>
+
+            <!-- Diatonic Quick Selector (Dynamic based on Global Key) -->
+            <div class="diatonic-selector card glass" style="margin-bottom: 2rem; padding: 1rem; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                <label style="display: block; margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                    Diatonic Quick Select (<span id="explorer-key-display"></span>)
+                </label>
+                <div id="explorer-diatonic-btns" class="compact-grid" style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+                    <!-- Buttons dynamically populated here -->
+                </div>
             </div>
 
             <div class="explorer-layout">
@@ -118,6 +128,8 @@ export function mode5_render(container) {
     const rootSelect = container.querySelector('#root-select');
     const typeSelect = container.querySelector('#type-select');
     const playBtn = container.querySelector('#play-chord-btn');
+    const diatonicContainer = container.querySelector('#explorer-diatonic-btns');
+    const keyDisplay = container.querySelector('#explorer-key-display');
 
     // Setup Fretboard
     initFretboard('fretboard-container');
@@ -285,6 +297,71 @@ export function mode5_render(container) {
         });
     };
 
+    // Render Diatonic Quick Select Buttons based on the currentKey
+    const renderDiatonicButtons = () => {
+        if (!diatonicContainer || !keyDisplay) return;
+        keyDisplay.textContent = `${currentKey} Major`;
+        diatonicContainer.innerHTML = '';
+
+        const scaleNotes = getScale(currentKey);
+
+        MAJOR_DIATONIC_CHORDS.forEach((info, idx) => {
+            const rootName = scaleNotes[idx].match(/^[A-Ga-g][b#]?/)[0];
+            const btn = document.createElement('button');
+            btn.className = 'mini-btn degree-btn';
+            btn.style.padding = '0.5rem 1rem';
+            btn.style.height = 'auto';
+            btn.style.lineHeight = '1.3';
+            
+            // Highlight active diatonic chord matching selected root and type
+            if (rootName === currentRoot && info.type === currentType) {
+                btn.classList.add('active');
+            }
+
+            btn.innerHTML = `
+                <span style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase; font-weight: 700;">
+                    ${['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'][idx]}
+                </span><br>
+                <strong style="font-size: 0.9rem;">${rootName}${info.suffix}</strong>
+            `;
+
+            btn.addEventListener('click', () => {
+                currentRoot = rootName;
+                currentType = info.type;
+
+                // Sync dropdown select values
+                rootSelect.value = currentRoot;
+                typeSelect.value = currentType;
+
+                // Update active states
+                diatonicContainer.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                updateVisualization();
+            });
+
+            diatonicContainer.appendChild(btn);
+        });
+    };
+
+    // Sync Active Diatonic Button after root or type changes via dropdown
+    const syncActiveDiatonicButton = () => {
+        if (!diatonicContainer) return;
+        diatonicContainer.querySelectorAll('button').forEach(btn => {
+            btn.classList.remove('active');
+            
+            const scaleNotes = getScale(currentKey);
+            const idx = Array.from(diatonicContainer.children).indexOf(btn);
+            if (idx !== -1) {
+                const rootName = scaleNotes[idx].match(/^[A-Ga-g][b#]?/)[0];
+                const info = MAJOR_DIATONIC_CHORDS[idx];
+                if (rootName === currentRoot && info.type === currentType) {
+                    btn.classList.add('active');
+                }
+            }
+        });
+    };
+
     const updateVisualization = () => {
         const type7th = chordTypeTo7th[currentType] || currentType;
         const notes = getChordNotes(currentRoot, type7th, 4); // Use 4th octave for staff
@@ -304,6 +381,9 @@ export function mode5_render(container) {
 
         // Update Staff
         drawStaff(notes, formula);
+
+        // Sync quick diatonic active state
+        syncActiveDiatonicButton();
     };
 
     function drawStaff(notes, formula) {
@@ -391,5 +471,6 @@ export function mode5_render(container) {
     });
 
     // Initial render
+    renderDiatonicButtons();
     updateVisualization();
 }
