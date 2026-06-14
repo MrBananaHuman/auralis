@@ -6,18 +6,21 @@ import { initFretboard, highlightNotesOnFretboard, clearFretboard } from '../fre
 export function mode5_render(container) {
     let currentRoot = 'C';
     let currentType = 'Major';
-    let currentStringSet = [0, 1, 2]; // 1,2,3 strings
+    let currentStringSet = [0, 1, 2, 3]; // Default to 4 strings: 1, 2, 3, 4
 
-    const chordTypes = [
-        'Major', 'Minor', 'Diminished', 'Augmented',
-        'Maj7', 'Min7', 'Dom7', 'Dim7', 'HalfDim7'
-    ];
+    const chordTypes = ['Major', 'Minor', 'Diminished', 'Augmented'];
+    const chordTypeTo7th = {
+        'Major': 'Maj7',
+        'Minor': 'Min7',
+        'Diminished': 'Dim7',
+        'Augmented': 'Aug7'
+    };
 
     const html = `
         <div class="glass-panel chord-explorer">
             <div style="text-align: center; margin-bottom: 2rem;">
                 <h2>Chord Explorer</h2>
-                <p>Master triads, 7th chords, and their intervals across the neck.</p>
+                <p>Master 7th chords and their intervals across the neck.</p>
             </div>
 
             <div class="explorer-layout">
@@ -96,8 +99,9 @@ export function mode5_render(container) {
     initFretboard('fretboard-container');
 
     const updateVisualization = () => {
-        const notes = getChordNotes(currentRoot, currentType, 4); // Use 4th octave for staff
-        const formula = getChordFormula(currentType);
+        const type7th = chordTypeTo7th[currentType] || currentType;
+        const notes = getChordNotes(currentRoot, type7th, 4); // Use 4th octave for staff
+        const formula = getChordFormula(type7th);
         
         // Fretboard highlight
         const labelsMap = {};
@@ -184,20 +188,6 @@ export function mode5_render(container) {
 
     typeSelect.addEventListener('change', (e) => {
         currentType = e.target.value;
-        const is7th = ['Maj7', 'Min7', 'Dom7', 'Dim7', 'HalfDim7'].includes(currentType);
-        
-        // Auto-select string sets suitable for Triads (3 strings) or 7th Chords (4 strings)
-        if (is7th && currentStringSet.length < 4) {
-            currentStringSet = [0, 1, 2, 3]; // Default to strings 1, 2, 3, 4
-        } else if (!is7th && currentStringSet.length > 3) {
-            currentStringSet = [0, 1, 2]; // Default back to strings 1, 2, 3
-        }
-
-        // Sync string check UI
-        checkboxes.forEach(cb => {
-            cb.checked = currentStringSet.includes(parseInt(cb.value));
-        });
-
         updateVisualization();
     });
 
@@ -213,7 +203,8 @@ export function mode5_render(container) {
 
     playBtn.addEventListener('click', () => {
         stopAll();
-        const notes = getChordNotes(currentRoot, currentType, 4);
+        const type7th = chordTypeTo7th[currentType] || currentType;
+        const notes = getChordNotes(currentRoot, type7th, 4);
         playChord(notes, '1n');
     });
 

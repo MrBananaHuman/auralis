@@ -26,6 +26,8 @@ export const CHORD_FORMULAS = {
     'm7b5': [0, 3, 6, 10],
     '6': [0, 4, 7, 9],
     'm6': [0, 3, 7, 9],
+    'Aug7': [0, 4, 8, 10],
+    'AugMaj7': [0, 4, 8, 11],
     'add9': [0, 4, 7, 14],
     '9': [0, 4, 7, 10, 14],
     'Maj9': [0, 4, 7, 11, 14],
@@ -184,6 +186,8 @@ export function getChordFormula(type) {
         case 'Dim7': return ['1', 'b3', 'b5', 'bb7'];
         case 'HalfDim7':
         case 'm7b5': return ['1', 'b3', 'b5', 'b7'];
+        case 'Aug7': return ['1', '3', '#5', 'b7'];
+        case 'AugMaj7': return ['1', '3', '#5', '7'];
         default: return ['1', '3', '5'];
     }
 }
