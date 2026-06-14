@@ -8,19 +8,16 @@ export function mode5_render(container) {
     let currentType = 'Major';
     let currentStringSet = [0, 1, 2]; // 1,2,3 strings
 
-    const triadTypes = ['Major', 'Minor', 'Diminished', 'Augmented'];
-    const stringSets = [
-        { label: '1, 2, 3 strings', indices: [0, 1, 2] },
-        { label: '2, 3, 4 strings', indices: [1, 2, 3] },
-        { label: '3, 4, 5 strings', indices: [2, 3, 4] },
-        { label: '4, 5, 6 strings', indices: [3, 4, 5] }
+    const chordTypes = [
+        'Major', 'Minor', 'Diminished', 'Augmented',
+        'Maj7', 'Min7', 'Dom7', 'Dim7', 'HalfDim7'
     ];
 
     const html = `
         <div class="glass-panel chord-explorer">
             <div style="text-align: center; margin-bottom: 2rem;">
                 <h2>Chord Explorer</h2>
-                <p>Master triads and their intervals across the neck.</p>
+                <p>Master triads, 7th chords, and their intervals across the neck.</p>
             </div>
 
             <div class="explorer-layout">
@@ -38,7 +35,7 @@ export function mode5_render(container) {
                             <label style="display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Chord Type</label>
                             <div class="custom-select-wrapper">
                                 <select id="type-select" class="custom-select">
-                                    ${triadTypes.map(t => `<option value="${t}" ${t === currentType ? 'selected' : ''}>${t}</option>`).join('')}
+                                    ${chordTypes.map(t => `<option value="${t}" ${t === currentType ? 'selected' : ''}>${t}</option>`).join('')}
                                 </select>
                             </div>
                         </div>
@@ -94,7 +91,6 @@ export function mode5_render(container) {
     const rootSelect = container.querySelector('#root-select');
     const typeSelect = container.querySelector('#type-select');
     const playBtn = container.querySelector('#play-chord-btn');
-    const setBtns = container.querySelectorAll('.filter-btn');
 
     // Setup Fretboard
     initFretboard('fretboard-container');
@@ -148,7 +144,7 @@ export function mode5_render(container) {
 
         notes.forEach((noteStr, idx) => {
             const y = midiToY(noteStr);
-            const x = 70 + idx * 40;
+            const x = 70 + idx * 35; // adjusted from 40 to 35 for 7th chord layout spacing
             
             // Draw note head
             const ellipse = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
@@ -188,6 +184,20 @@ export function mode5_render(container) {
 
     typeSelect.addEventListener('change', (e) => {
         currentType = e.target.value;
+        const is7th = ['Maj7', 'Min7', 'Dom7', 'Dim7', 'HalfDim7'].includes(currentType);
+        
+        // Auto-select string sets suitable for Triads (3 strings) or 7th Chords (4 strings)
+        if (is7th && currentStringSet.length < 4) {
+            currentStringSet = [0, 1, 2, 3]; // Default to strings 1, 2, 3, 4
+        } else if (!is7th && currentStringSet.length > 3) {
+            currentStringSet = [0, 1, 2]; // Default back to strings 1, 2, 3
+        }
+
+        // Sync string check UI
+        checkboxes.forEach(cb => {
+            cb.checked = currentStringSet.includes(parseInt(cb.value));
+        });
+
         updateVisualization();
     });
 

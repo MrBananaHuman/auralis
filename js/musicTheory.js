@@ -178,6 +178,12 @@ export function getChordFormula(type) {
         case 'Minor': return ['1', 'b3', '5'];
         case 'Diminished': return ['1', 'b3', 'b5'];
         case 'Augmented': return ['1', '3', '#5'];
+        case 'Maj7': return ['1', '3', '5', '7'];
+        case 'Min7': return ['1', 'b3', '5', 'b7'];
+        case 'Dom7': return ['1', '3', '5', 'b7'];
+        case 'Dim7': return ['1', 'b3', 'b5', 'bb7'];
+        case 'HalfDim7':
+        case 'm7b5': return ['1', 'b3', 'b5', 'b7'];
         default: return ['1', '3', '5'];
     }
 }
