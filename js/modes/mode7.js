@@ -1,6 +1,6 @@
 // js/modes/mode7.js
 import { initFretboard, onFretClick, clearFretboard, highlightRoot } from '../fretboard.js';
-import { identifyChord, pickRandom, getNoteName } from '../musicTheory.js';
+import { identifyChord, pickRandom, getNoteName, getChordNotes, getChordFormula } from '../musicTheory.js';
 import { playChord, stopAll } from '../audioEngine.js';
 
 export function mode7_render(container, currentKey) {
@@ -11,7 +11,7 @@ export function mode7_render(container, currentKey) {
                 <div class="dashboard-main">
                     <div class="chord-info-pill">
                         <div id="identified-chord-name" class="chord-name-compact">No Notes Selected</div>
-                        <div id="identified-chord-details" class="chord-details-compact">Select frets...</div>
+                        <div id="identified-chord-details" class="chord-details-compact">Select frets or use Quick Select...</div>
                     </div>
                     <div class="dashboard-visualizer">
                         <canvas id="lissajous-canvas" width="80" height="80"></canvas>
@@ -21,7 +21,7 @@ export function mode7_render(container, currentKey) {
 
             <!-- Sleek Action Bar (Floating above Fretboard) -->
             <div class="action-pill-bar">
-                <button id="add-chord-btn" class="pill-btn primary ripple" disabled>
+                <button id="add-chord-btn" class="pill-btn primary ripple" style="opacity: 1; pointer-events: auto;">
                     <i data-lucide="plus"></i> <span>Add to Progression</span>
                 </button>
                 <button id="clear-selection-btn" class="pill-btn outline ripple" title="Clear Selection">
@@ -56,6 +56,35 @@ export function mode7_render(container, currentKey) {
                 </button>
             </div>
 
+            <!-- Timeline Controls (BPM, Rhythm, Time Signature) -->
+            <div class="timeline-controls card glass" style="margin-bottom: 1rem; padding: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); background: rgba(15, 23, 42, 0.4);">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">BPM</label>
+                    <input type="range" id="bpm-slider" min="40" max="240" value="120" style="width: 120px; accent-color: var(--primary); cursor: pointer;">
+                    <span id="bpm-val" style="font-size: 0.9rem; font-weight: 700; min-width: 30px; color: var(--text-main);">120</span>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Rhythm</label>
+                        <select id="rhythm-select" class="custom-select" style="padding: 0.4rem 2rem 0.4rem 0.75rem; font-size: 0.85rem; width: auto; min-width: 110px;">
+                            <option value="4n">Quarter (4분)</option>
+                            <option value="8n">Eighth (8분)</option>
+                            <option value="2n">Half (2분)</option>
+                            <option value="1n">Whole (온음)</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Time Sig</label>
+                        <select id="time-sig-select" class="custom-select" style="padding: 0.4rem 2rem 0.4rem 0.75rem; font-size: 0.85rem; width: auto; min-width: 80px;">
+                            <option value="4/4">4/4</option>
+                            <option value="3/4">3/4</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <div class="progression-timeline-compact card glass">
                 <div class="timeline-header-slim">
                     <h3 class="timeline-title">Timeline</h3>
@@ -81,14 +110,19 @@ export function mode7_render(container, currentKey) {
     const canvas = container.querySelector('#lissajous-canvas');
     const ctx = canvas.getContext('2d');
 
+    const bpmSlider = container.querySelector('#bpm-slider');
+    const rhythmSelect = container.querySelector('#rhythm-select');
+    const timeSigSelect = container.querySelector('#time-sig-select');
+    const bpmVal = container.querySelector('#bpm-val');
+
     let selectedMidis = new Set();
     let selectedCells = []; 
     let playbackMidis = null; 
     let playbackChord = null; 
-    let isGuidanceActive = false; // New: track if quick selector guidance is on
+    let isGuidanceActive = false;
     let progression = [];
     let isPlaying = false;
-    let isLooping = false; // New: track loop state
+    let isLooping = false;
     let animationId;
 
     initFretboard('fretboard-container-mode7');
@@ -110,6 +144,28 @@ export function mode7_render(container, currentKey) {
     const addSelectedBtn = container.querySelector('#add-selected-chord-btn');
 
     keyDisplay.textContent = `${currentKey} Major`;
+
+    // BPM Slider display sync
+    bpmSlider.addEventListener('input', (e) => {
+        bpmVal.textContent = e.target.value;
+    });
+
+    // Helper: Calculates playback delay millisecond based on BPM, Time Signature, and Rhythm
+    const getPlaybackDelayMs = () => {
+        const bpm = parseInt(bpmSlider.value, 10);
+        const rhythm = rhythmSelect.value;
+        const timeSig = timeSigSelect.value;
+        const beatsPerMeasure = timeSig === '3/4' ? 3 : 4;
+        const oneBeatMs = 60000 / bpm;
+
+        switch (rhythm) {
+            case '1n': return oneBeatMs * beatsPerMeasure;
+            case '2n': return oneBeatMs * 2;
+            case '4n': return oneBeatMs * 1;
+            case '8n': return oneBeatMs * 0.5;
+            default: return oneBeatMs * 1;
+        }
+    };
 
     // Render Diatonic Buttons
     import('../musicTheory.js').then(mt => {
@@ -200,7 +256,7 @@ export function mode7_render(container, currentKey) {
             updateAnalysis();
             // Preview sound
             const previewMidis = Array.from(new Set(document.querySelectorAll('.fret.candidate')).values())
-                .slice(0, 4) // Play a few representative notes
+                .slice(0, 4)
                 .map(f => parseInt(f.dataset.midi));
             playChord(previewMidis);
         });
@@ -215,16 +271,23 @@ export function mode7_render(container, currentKey) {
         const activeChord = playbackChord || (midis.length > 0 ? identifyChord(midis) : null);
 
         if (!activeChord && midis.length === 0) {
-            chordNameDisplay.textContent = 'No Notes Selected';
-            chordDetailsDisplay.textContent = 'Select at least 2-3 notes';
+            // Updated: Display current quick select info when no manual selection is active
+            const chordSuffixes = {
+                'Major': '', 'Minor': 'm', 'Diminished': 'dim', 'Augmented': 'aug',
+                'Sus4': 'sus4', 'Sus2': 'sus2', 'Maj7': 'maj7', 'Min7': 'm7',
+                'Dom7': '7', 'Dim7': 'dim7', 'm7b5': 'm7b5', 'HalfDim7': 'm7b5'
+            };
+            const suffix = chordSuffixes[currentQuickType] || '';
+            chordNameDisplay.textContent = `${currentQuickRoot}${suffix}`;
+            chordDetailsDisplay.textContent = `Quick Selected | Type: ${currentQuickType}`;
             chordNameDisplay.classList.remove('playback-active');
-            addChordBtn.disabled = true;
+            addChordBtn.disabled = false; // Always enabled for quick addition
         } else if (activeChord) {
             chordNameDisplay.textContent = activeChord.name || 'Cluster';
             chordDetailsDisplay.textContent = activeChord.details || `Type: ${activeChord.type} | Root: ${activeChord.root}`;
             if (playbackChord) chordNameDisplay.classList.add('playback-active');
             else chordNameDisplay.classList.remove('playback-active');
-            addChordBtn.disabled = midis.length === 0;
+            addChordBtn.disabled = false;
         }
     };
 
@@ -237,7 +300,6 @@ export function mode7_render(container, currentKey) {
         const marker = element.querySelector('.note-marker');
 
         if (isGuidanceActive) {
-            // Guided selection mode
             if (element.classList.contains('candidate') || element.classList.contains('selected')) {
                 const isAlreadySelected = element.classList.contains('selected');
                 
@@ -254,7 +316,6 @@ export function mode7_render(container, currentKey) {
                     playChord([midi]);
                 }
 
-                // Update dimmed state for other candidates
                 const hasAnySelected = container.querySelectorAll('.fret.selected').length > 0;
                 container.querySelectorAll('.fret.candidate').forEach(f => {
                     if (hasAnySelected) f.classList.add('dimmed');
@@ -266,7 +327,6 @@ export function mode7_render(container, currentKey) {
             }
         }
 
-        // Normal mode or non-candidate click
         const existingIdx = selectedCells.findIndex(c => c.id === cellId);
         if (existingIdx !== -1) {
             selectedCells.splice(existingIdx, 1);
@@ -281,7 +341,7 @@ export function mode7_render(container, currentKey) {
             marker.classList.add('active', 'midi-user');
             element.classList.add('midi-user', 'selected');
             playChord([midi]);
-            isGuidanceActive = false; // Disable guidance if user starts manual picking
+            isGuidanceActive = false;
         }
         updateAnalysis();
     });
@@ -299,15 +359,77 @@ export function mode7_render(container, currentKey) {
     });
 
     addChordBtn.addEventListener('click', () => {
-        if (selectedCells.length === 0) return;
-        const midis = Array.from(selectedMidis);
-        const result = identifyChord(midis);
+        let midis = Array.from(selectedMidis);
+        let cells = [...selectedCells];
+        let chordName = '';
+        let chordDetails = '';
+
+        const chordSuffixes = {
+            'Major': '', 'Minor': 'm', 'Diminished': 'dim', 'Augmented': 'aug',
+            'Sus4': 'sus4', 'Sus2': 'sus2', 'Maj7': 'maj7', 'Min7': 'm7',
+            'Dom7': '7', 'Dim7': 'dim7', 'm7b5': 'm7b5', 'HalfDim7': 'm7b5'
+        };
+
+        if (midis.length === 0) {
+            // Auto-Voicing Generator: Auto-selects fret positions for the quick select chord tones
+            const formula = getChordFormula(currentQuickType);
+            const notes = getChordNotes(currentQuickRoot, currentQuickType, 4);
+
+            // Assign strings: 4-part voicing uses strings 4,3,2,1. 3-part uses strings 3,2,1.
+            const stringSet = formula.length === 4 ? [3, 2, 1, 0] : [2, 1, 0];
+            const sortedStrings = [...stringSet].sort((a, b) => b - a);
+
+            let targetDegrees = [];
+            if (formula.length === 4) {
+                targetDegrees = [formula[0], formula[2], formula[3], formula[1]]; // Root position Drop 2
+            } else {
+                targetDegrees = [formula[0], formula[1], formula[2]]; // Root position Closed
+            }
+
+            const stringNoteNames = targetDegrees.map(deg => {
+                const idx = formula.indexOf(deg);
+                return idx !== -1 ? notes[idx].match(/^[A-Ga-g][b#]?/)[0] : null;
+            });
+
+            // Find matching frets on the assigned strings
+            sortedStrings.forEach((strIdx, i) => {
+                const noteName = stringNoteNames[i];
+                if (!noteName) return;
+
+                const stringBaseMidi = [64, 59, 55, 50, 45, 40][strIdx];
+                for (let fret = 0; fret <= 15; fret++) {
+                    const midiNote = stringBaseMidi + fret;
+                    const testNoteName = getNoteName(midiNote);
+                    if (testNoteName === noteName) {
+                        midis.push(midiNote);
+                        cells.push({
+                            id: `s${strIdx}f${fret}`,
+                            midi: midiNote,
+                            string: strIdx.toString(),
+                            fret: fret.toString()
+                        });
+                        break;
+                    }
+                }
+            });
+
+            const suffix = chordSuffixes[currentQuickType] || '';
+            chordName = `${currentQuickRoot}${suffix}`;
+            chordDetails = `Type: ${currentQuickType} | Root: ${currentQuickRoot} (Auto-Voiced)`;
+        } else {
+            const result = identifyChord(midis);
+            chordName = result.name || 'Cluster';
+            chordDetails = result.type ? `Type: ${result.type} | Root: ${result.root}` : 'Unknown combination';
+        }
+
+        if (midis.length === 0) return; // Fallback safety
+
         const chordObj = {
             id: Date.now(),
-            name: result.name || 'Cluster',
+            name: chordName,
             midis: [...midis],
-            cells: [...selectedCells], // Save exact positions
-            details: result.type ? `Type: ${result.type} | Root: ${result.root}` : 'Unknown combination'
+            cells: [...cells],
+            details: chordDetails
         };
         
         progression.push(chordObj);
@@ -354,12 +476,10 @@ export function mode7_render(container, currentKey) {
                 e.stopPropagation();
                 if (isPlaying) return;
                 
-                // Temporary playback state for individual play
                 playbackMidis = chord.midis;
                 playbackChord = { name: chord.name, details: chord.details };
                 updateAnalysis();
                 
-                // Highlight specific frets
                 chord.cells.forEach(cell => {
                     const el = document.querySelector(`.string-${cell.string} .fret[data-fret="${cell.fret}"]`);
                     if (el) el.classList.add('playback-highlight');
@@ -368,6 +488,7 @@ export function mode7_render(container, currentKey) {
                 playChord(chord.midis);
                 card.classList.add('playing');
                 
+                const delayMs = getPlaybackDelayMs();
                 setTimeout(() => {
                     card.classList.remove('playing');
                     chord.cells.forEach(cell => {
@@ -377,7 +498,7 @@ export function mode7_render(container, currentKey) {
                     playbackMidis = null;
                     playbackChord = null;
                     updateAnalysis();
-                }, 1500);
+                }, delayMs);
             });
 
             card.querySelector('.delete-card-btn').addEventListener('click', (e) => {
@@ -399,7 +520,6 @@ export function mode7_render(container, currentKey) {
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // Prioritize playbackMidis if currently playing a progression
         const activeMidis = playbackMidis || Array.from(selectedMidis);
         const midis = [...activeMidis].sort((a, b) => a - b);
         
@@ -409,18 +529,16 @@ export function mode7_render(container, currentKey) {
         const radius = canvas.width * 0.38;
 
         if (midis.length >= 2) {
-            // Calculate ratio between the lowest and highest selected notes
             const f1 = 440 * Math.pow(2, (midis[0] - 69) / 12);
             const f2 = 440 * Math.pow(2, (midis[midis.length-1] - 69) / 12);
             const ratio = f1 / f2;
 
             ctx.beginPath();
-            ctx.strokeStyle = '#a78bfa'; // Brighter purple
+            ctx.strokeStyle = '#a78bfa';
             ctx.lineWidth = 2.5;
             ctx.shadowBlur = 15;
             ctx.shadowColor = '#8b5cf6';
 
-            // Draw a longer, smoother path
             for (let t = 0; t < Math.PI * 4; t += 0.02) {
                 const x = centerX + radius * Math.sin(t + time * 2);
                 const y = centerY + radius * Math.sin(t / ratio + time * 1.5);
@@ -429,17 +547,15 @@ export function mode7_render(container, currentKey) {
             }
             ctx.stroke();
         } else if (midis.length === 1) {
-            // Pulse circle for single note
             const radiusPulse = radius * 0.8 + Math.sin(time * 8) * 4;
             ctx.beginPath();
             ctx.arc(centerX, centerY, radiusPulse, 0, Math.PI * 2);
-            ctx.strokeStyle = '#34d399'; // Brighter emerald
+            ctx.strokeStyle = '#34d399';
             ctx.lineWidth = 3;
             ctx.shadowBlur = 20;
             ctx.shadowColor = '#10b981';
             ctx.stroke();
         } else {
-            // Idle state: Subtle rotating dashed circle
             ctx.beginPath();
             ctx.setLineDash([5, 10]);
             ctx.arc(centerX, centerY, radius * 0.7, time, time + Math.PI * 2);
@@ -468,7 +584,6 @@ export function mode7_render(container, currentKey) {
 
     playAllBtn.addEventListener('click', async () => {
         if (isPlaying) {
-            // Stop playback
             isPlaying = false;
             return;
         }
@@ -499,7 +614,8 @@ export function mode7_render(container, currentKey) {
 
                 playChord(chord.midis);
                 
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                const delayMs = getPlaybackDelayMs();
+                await new Promise(resolve => setTimeout(resolve, delayMs));
                 
                 if (card) card.classList.remove('active-play');
                 chord.cells.forEach(cell => {
@@ -520,4 +636,7 @@ export function mode7_render(container, currentKey) {
         playAllBtn.innerHTML = '<i data-lucide="play-circle"></i> Play';
         lucide.createIcons({ root: playAllBtn });
     });
+
+    // Run initial display update
+    setTimeout(updateAnalysis, 100);
 }
