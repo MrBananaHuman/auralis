@@ -893,10 +893,18 @@ header p {
     color: var(--text-secondary);
     font-size: 0.8rem;
     letter-spacing: 2px;
+    border-right: 2px solid transparent;
+    box-sizing: border-box;
+    min-width: 0;
 }
 
 .fret-marker-label:first-child {
     flex: 0.5;
+    border-right: 8px solid transparent;
+}
+
+.fret-marker-label:last-child {
+    border-right: none;
 }
 
 /* ==========================================================================
