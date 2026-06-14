@@ -4088,14 +4088,26 @@ function mode7_render(container, currentKey) {
                 </button>
             </div>
 
-            <!-- Timeline Controls (BPM, Rhythm, Time Signature) -->
+            <!-- Timeline Controls (BPM, Rhythm, Time Signature, Rhythm Pattern Notation) -->
             <div class="timeline-controls card glass" style="margin-bottom: 1rem; padding: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); background: rgba(15, 23, 42, 0.4);">
+                <!-- BPM Tempo Control -->
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                     <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">BPM</label>
                     <input type="range" id="bpm-slider" min="40" max="240" value="120" style="width: 120px; accent-color: var(--primary); cursor: pointer;">
                     <span id="bpm-val" style="font-size: 0.9rem; font-weight: 700; min-width: 30px; color: var(--text-main);">120</span>
                 </div>
                 
+                <!-- Dynamic Rhythm Sheet SVG -->
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem;">
+                    <label style="color: var(--text-muted); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Rhythm Pattern</label>
+                    <div style="background: white; border-radius: 8px; padding: 0.4rem 0.8rem; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
+                        <svg id="rhythm-notation-svg" width="160" height="40" viewBox="0 0 160 40" style="background: transparent;">
+                            <!-- Dynamic content injected here -->
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Rhythm Selectors -->
                 <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
                         <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Rhythm</label>
@@ -4182,22 +4194,102 @@ function mode7_render(container, currentKey) {
         bpmVal.textContent = e.target.value;
     });
 
-    // Helper: Calculates playback delay millisecond based on BPM, Time Signature, and Rhythm
-    const getPlaybackDelayMs = () => {
-        const bpm = parseInt(bpmSlider.value, 10);
+    // Helper: Draws visual rhythm slash notation on the staff SVG
+    const drawRhythmNotation = () => {
+        const svg = container.querySelector('#rhythm-notation-svg');
+        if (!svg) return;
+        svg.innerHTML = '';
+
         const rhythm = rhythmSelect.value;
         const timeSig = timeSigSelect.value;
-        const beatsPerMeasure = timeSig === '3/4' ? 3 : 4;
-        const oneBeatMs = 60000 / bpm;
+        const beats = timeSig === '3/4' ? 3 : 4;
 
-        switch (rhythm) {
-            case '1n': return oneBeatMs * beatsPerMeasure;
-            case '2n': return oneBeatMs * 2;
-            case '4n': return oneBeatMs * 1;
-            case '8n': return oneBeatMs * 0.5;
-            default: return oneBeatMs * 1;
+        // 1. Staff line
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", "5"); line.setAttribute("y1", "20");
+        line.setAttribute("x2", "155"); line.setAttribute("y2", "20");
+        line.setAttribute("stroke", "#333");
+        line.setAttribute("stroke-width", "1.5");
+        svg.appendChild(line);
+
+        // 2. Time Signature numbers
+        const timeSigText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        timeSigText.setAttribute("x", "10");
+        timeSigText.setAttribute("y", "15");
+        timeSigText.setAttribute("fill", "#111");
+        timeSigText.setAttribute("font-size", "14");
+        timeSigText.setAttribute("font-family", "Outfit, sans-serif");
+        timeSigText.setAttribute("font-weight", "800");
+        timeSigText.innerHTML = `<tspan x="10" dy="2">${timeSig.split('/')[0]}</tspan><tspan x="10" dy="12">${timeSig.split('/')[1]}</tspan>`;
+        svg.appendChild(timeSigText);
+
+        // 3. Populate notes
+        let numNotes = 1;
+        if (rhythm === '4n') numNotes = beats;
+        else if (rhythm === '8n') numNotes = beats * 2;
+        else if (rhythm === '2n') numNotes = timeSig === '3/4' ? 1 : 2;
+        else if (rhythm === '1n') numNotes = 1;
+
+        const startX = 35;
+        const endX = 145;
+        const width = endX - startX;
+        const step = numNotes > 1 ? width / (numNotes - 1) : width / 2;
+
+        for (let i = 0; i < numNotes; i++) {
+            const x = numNotes > 1 ? startX + i * step : startX + (endX - startX) / 2;
+            const y = 20;
+
+            // Slash note head shape
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", `M ${x-4} ${y+4} L ${x+4} ${y-4} L ${x+2} ${y-5} L ${x-6} ${y+3} Z`);
+            path.setAttribute("fill", "#4f46e5");
+            svg.appendChild(path);
+
+            // Note Stem
+            if (rhythm !== '1n') {
+                const stem = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                stem.setAttribute("x1", x + 3); stem.setAttribute("y1", y - 4);
+                stem.setAttribute("x2", x + 3); stem.setAttribute("y2", y - 16);
+                stem.setAttribute("stroke", "#4f46e5");
+                stem.setAttribute("stroke-width", "1.5");
+                svg.appendChild(stem);
+
+                // Eighth note flag
+                if (rhythm === '8n') {
+                    const flag = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    flag.setAttribute("d", `M ${x+3} ${y-16} Q ${x+8} ${y-12} ${x+7} ${y-6}`);
+                    flag.setAttribute("stroke", "#4f46e5");
+                    flag.setAttribute("stroke-width", "1.5");
+                    flag.setAttribute("fill", "none");
+                    svg.appendChild(flag);
+                }
+            }
+            
+            // Rest representation for 2n in 3/4 time
+            if (rhythm === '2n' && timeSig === '3/4' && i === 0) {
+                const restX = x + step;
+                const restText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                restText.setAttribute("x", restX);
+                restText.setAttribute("y", "23");
+                restText.setAttribute("fill", "#666");
+                restText.setAttribute("font-size", "18");
+                restText.setAttribute("text-anchor", "middle");
+                restText.textContent = "𝄾"; // Quarter rest unicode
+                svg.appendChild(restText);
+            }
         }
+
+        // Bar line ending
+        const barLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        barLine.setAttribute("x1", "155"); barLine.setAttribute("y1", "10");
+        barLine.setAttribute("x2", "155"); barLine.setAttribute("y2", "30");
+        barLine.setAttribute("stroke", "#333");
+        barLine.setAttribute("stroke-width", "2.5");
+        svg.appendChild(barLine);
     };
+
+    rhythmSelect.addEventListener('change', drawRhythmNotation);
+    timeSigSelect.addEventListener('change', drawRhythmNotation);
 
     // Render Diatonic Buttons
     Promise.resolve({ MAJOR_DIATONIC_CHORDS, getScale, getChordNotes }).then(mt => {
@@ -4303,7 +4395,6 @@ function mode7_render(container, currentKey) {
         const activeChord = playbackChord || (midis.length > 0 ? identifyChord(midis) : null);
 
         if (!activeChord && midis.length === 0) {
-            // Updated: Display current quick select info when no manual selection is active
             const chordSuffixes = {
                 'Major': '', 'Minor': 'm', 'Diminished': 'dim', 'Augmented': 'aug',
                 'Sus4': 'sus4', 'Sus2': 'sus2', 'Maj7': 'maj7', 'Min7': 'm7',
@@ -4313,7 +4404,7 @@ function mode7_render(container, currentKey) {
             chordNameDisplay.textContent = `${currentQuickRoot}${suffix}`;
             chordDetailsDisplay.textContent = `Quick Selected | Type: ${currentQuickType}`;
             chordNameDisplay.classList.remove('playback-active');
-            addChordBtn.disabled = false; // Always enabled for quick addition
+            addChordBtn.disabled = false;
         } else if (activeChord) {
             chordNameDisplay.textContent = activeChord.name || 'Cluster';
             chordDetailsDisplay.textContent = activeChord.details || `Type: ${activeChord.type} | Root: ${activeChord.root}`;
@@ -4454,7 +4545,7 @@ function mode7_render(container, currentKey) {
             chordDetails = result.type ? `Type: ${result.type} | Root: ${result.root}` : 'Unknown combination';
         }
 
-        if (midis.length === 0) return; // Fallback safety
+        if (midis.length === 0) return;
 
         const chordObj = {
             id: Date.now(),
@@ -4517,20 +4608,52 @@ function mode7_render(container, currentKey) {
                     if (el) el.classList.add('playback-highlight');
                 });
 
-                playChord(chord.midis);
                 card.classList.add('playing');
                 
-                const delayMs = getPlaybackDelayMs();
-                setTimeout(() => {
-                    card.classList.remove('playing');
-                    chord.cells.forEach(cell => {
-                        const el = document.querySelector(`.string-${cell.string} .fret[data-fret="${cell.fret}"]`);
-                        if (el) el.classList.remove('playback-highlight');
-                    });
-                    playbackMidis = null;
-                    playbackChord = null;
-                    updateAnalysis();
-                }, delayMs);
+                // Play individual card with the selected rhythm strum pattern
+                const bpm = parseInt(bpmSlider.value, 10);
+                const rhythm = rhythmSelect.value;
+                const timeSig = timeSigSelect.value;
+                const beatsPerMeasure = timeSig === '3/4' ? 3 : 4;
+                const oneBeatMs = 60000 / bpm;
+                const oneMeasureMs = oneBeatMs * beatsPerMeasure;
+
+                let numHits = 1;
+                let hitIntervalMs = oneMeasureMs;
+                let noteDuration = '1n';
+
+                if (rhythm === '4n') {
+                    numHits = beatsPerMeasure;
+                    hitIntervalMs = oneBeatMs;
+                    noteDuration = '4n';
+                } else if (rhythm === '8n') {
+                    numHits = beatsPerMeasure * 2;
+                    hitIntervalMs = oneBeatMs * 0.5;
+                    noteDuration = '8n';
+                } else if (rhythm === '2n') {
+                    numHits = timeSig === '3/4' ? 1 : 2;
+                    hitIntervalMs = oneBeatMs * 2;
+                    noteDuration = '2n';
+                }
+
+                for (let hit = 0; hit < numHits; hit++) {
+                    playChord(chord.midis, noteDuration);
+                    if (rhythm === '2n' && timeSig === '3/4') {
+                        await new Promise(resolve => setTimeout(resolve, oneBeatMs * 2));
+                        await new Promise(resolve => setTimeout(resolve, oneBeatMs * 1));
+                    } else {
+                        await new Promise(resolve => setTimeout(resolve, hitIntervalMs));
+                    }
+                }
+                
+                card.classList.remove('playing');
+                chord.cells.forEach(cell => {
+                    const el = document.querySelector(`.string-${cell.string} .fret[data-fret="${cell.fret}"]`);
+                    if (el) el.classList.remove('playback-highlight');
+                });
+                playbackMidis = null;
+                playbackChord = null;
+                updateAnalysis();
             });
 
             card.querySelector('.delete-card-btn').addEventListener('click', (e) => {
@@ -4627,6 +4750,31 @@ function mode7_render(container, currentKey) {
         lucide.createIcons({ root: playAllBtn });
 
         const runPlayback = async () => {
+            const bpm = parseInt(bpmSlider.value, 10);
+            const rhythm = rhythmSelect.value;
+            const timeSig = timeSigSelect.value;
+            const beatsPerMeasure = timeSig === '3/4' ? 3 : 4;
+            const oneBeatMs = 60000 / bpm;
+            const oneMeasureMs = oneBeatMs * beatsPerMeasure;
+
+            let numHits = 1;
+            let hitIntervalMs = oneMeasureMs;
+            let noteDuration = '1n';
+
+            if (rhythm === '4n') {
+                numHits = beatsPerMeasure;
+                hitIntervalMs = oneBeatMs;
+                noteDuration = '4n';
+            } else if (rhythm === '8n') {
+                numHits = beatsPerMeasure * 2;
+                hitIntervalMs = oneBeatMs * 0.5;
+                noteDuration = '8n';
+            } else if (rhythm === '2n') {
+                numHits = timeSig === '3/4' ? 1 : 2;
+                hitIntervalMs = oneBeatMs * 2;
+                noteDuration = '2n';
+            }
+
             for (let i = 0; i < progression.length; i++) {
                 if (!isPlaying) break;
 
@@ -4644,10 +4792,19 @@ function mode7_render(container, currentKey) {
                     if (el) el.classList.add('playback-highlight');
                 });
 
-                playChord(chord.midis);
-                
-                const delayMs = getPlaybackDelayMs();
-                await new Promise(resolve => setTimeout(resolve, delayMs));
+                // Play the chord repeatedly within the measure based on the selected rhythm
+                for (let hit = 0; hit < numHits; hit++) {
+                    if (!isPlaying) break;
+                    playChord(chord.midis, noteDuration);
+
+                    if (rhythm === '2n' && timeSig === '3/4') {
+                        await new Promise(resolve => setTimeout(resolve, oneBeatMs * 2));
+                        if (!isPlaying) break;
+                        await new Promise(resolve => setTimeout(resolve, oneBeatMs * 1));
+                    } else {
+                        await new Promise(resolve => setTimeout(resolve, hitIntervalMs));
+                    }
+                }
                 
                 if (card) card.classList.remove('active-play');
                 chord.cells.forEach(cell => {
@@ -4669,7 +4826,8 @@ function mode7_render(container, currentKey) {
         lucide.createIcons({ root: playAllBtn });
     });
 
-    // Run initial display update
+    // Draw initial rhythm display
+    setTimeout(drawRhythmNotation, 100);
     setTimeout(updateAnalysis, 100);
 }
 
