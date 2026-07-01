@@ -218,16 +218,17 @@ export function mode5_render(container, currentKey = 'C') {
             });
         };
 
-        // 1. 선택된 전체 줄 기준 보이싱 탐색 (e.g. 4-3-2-1번 줄, 근음이 4번 줄에 있는 포지션 포함)
-        searchVoicings(sortedStrings, formula, notes);
+        // 인접 4줄 슬라이딩 윈도우: 6-5-4-3, 5-4-3-2, 4-3-2-1 등 각 4줄 조합 탐색
+        // → 5번·6번 줄 근음 포지션도 선택 줄에 포함되어 있으면 자동 포함
+        for (let i = 0; i <= sortedStrings.length - 4; i++) {
+            searchVoicings(sortedStrings.slice(i, i + 4), formula, notes);
+        }
 
-        // 2. 4줄 이상 선택 시, 상위 3줄(3-2-1번 줄)도 별도 탐색
-        //    → 3번줄을 근음으로 하는 포지션 (3-2-1번 줄 연주 형태) 추가
-        if (sortedStrings.length >= 4) {
-            const top3Strings = sortedStrings.slice(-3); // 가장 높은 음 3줄
-            const triFormula = formula.slice(0, 3);      // 1·3·5 (7도 제외 트라이어드)
-            const triNotes = notes.slice(0, 3);
-            searchVoicings(top3Strings, triFormula, triNotes);
+        // 인접 3줄 슬라이딩 윈도우: 3-2-1, 4-3-2, 5-4-3, 6-5-4 등 트라이어드 탐색
+        const triFormula = formula.slice(0, 3);
+        const triNotes = notes.slice(0, 3);
+        for (let i = 0; i <= sortedStrings.length - 3; i++) {
+            searchVoicings(sortedStrings.slice(i, i + 3), triFormula, triNotes);
         }
 
         // 근음 프렛 순서로 정렬 (넥 왼쪽 → 오른쪽)
