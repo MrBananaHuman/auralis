@@ -54,28 +54,31 @@ export function mode5_render(container, currentKey = 'C') {
                         </div>
                     </div>
 
-                    <!-- Legend for Voicing Inversion Shapes -->
-                    <div class="voicing-legend" style="display: flex; justify-content: center; gap: 1.25rem; margin-top: 1.5rem; flex-wrap: wrap; font-size: 0.75rem; font-weight: 600;">
-                        <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #6366f1; box-shadow: 0 0 5px #6366f1;"></span>
-                            <span style="color: var(--text-muted);">Root Position</span>
+                    <!-- Legend: 근음(1도) 기준 포지션별 색깔 -->
+                    <div class="voicing-legend" style="display: flex; flex-direction: column; align-items: center; gap: 0.6rem; margin-top: 1.5rem; font-size: 0.75rem; font-weight: 600;">
+                        <div style="display: flex; justify-content: center; gap: 1.25rem; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #6366f1; box-shadow: 0 0 5px #6366f1;"></span>
+                                <span style="color: var(--text-muted);">포지션 1</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 5px #10b981;"></span>
+                                <span style="color: var(--text-muted);">포지션 2</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 5px #f59e0b;"></span>
+                                <span style="color: var(--text-muted);">포지션 3</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #ec4899; box-shadow: 0 0 5px #ec4899;"></span>
+                                <span style="color: var(--text-muted);">포지션 4</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #06b6d4; box-shadow: 0 0 5px #06b6d4;"></span>
+                                <span style="color: var(--text-muted);">포지션 5</span>
+                            </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 5px #10b981;"></span>
-                            <span style="color: var(--text-muted);">1st Inversion</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 5px #f59e0b;"></span>
-                            <span style="color: var(--text-muted);">2nd Inversion</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.4rem;" id="legend-3rd-item">
-                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #ec4899; box-shadow: 0 0 5px #ec4899;"></span>
-                            <span style="color: var(--text-muted);">3rd Inversion</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #06b6d4; box-shadow: 0 0 5px #06b6d4;"></span>
-                            <span style="color: var(--text-muted);">Shared (Multi-shape)</span>
-                        </div>
+                        <div style="color: var(--text-muted); opacity: 0.7; font-size: 0.7rem;">같은 색 = 근음(1도)을 기준으로 묶인 1·3·5·7</div>
                     </div>
 
                     <div style="margin-top: 1.5rem; display: flex; align-items: center; gap: 2.5rem;">
@@ -134,17 +137,10 @@ export function mode5_render(container, currentKey = 'C') {
     // Setup Fretboard
     initFretboard('fretboard-container');
 
-    // Helper: Highlights clustered inversion shapes in different colors rather than drawing all notes uniformly
+    // Helper: 근음(1도) 위치를 기준으로 1·3·5·7을 같은 색으로 묶어 표시
     const highlightAllVoicingShapesOnFretboard = (notes, formula, stringSet) => {
         clearFretboard();
 
-        // Dynamically toggle 3rd inversion legend item depending on 3-string vs 4-string mode
-        const legend3rd = container.querySelector('#legend-3rd-item');
-        if (legend3rd) {
-            legend3rd.style.display = stringSet.length === 4 ? 'flex' : 'none';
-        }
-
-        // 1. If string set is not exactly 3 or 4 strings, show all notes in default color
         if (stringSet.length !== 3 && stringSet.length !== 4) {
             const labelsMap = {};
             notes.forEach((fullNote, idx) => {
@@ -155,140 +151,95 @@ export function mode5_render(container, currentKey = 'C') {
             return;
         }
 
-        // 2. Sort stringSet from lowest pitch (highest index, e.g. 5 for low E) to highest pitch
         const sortedStrings = [...stringSet].sort((a, b) => b - a);
         const voicings = stringSet.length === 4 ? ['root', '1st', '2nd', '3rd'] : ['root', '1st', '2nd'];
 
-        // Map containing cell identifier -> sets of voicing shapes they belong to
-        const cellVoicingMap = {};
+        // 모든 유효한 보이싱 클러스터 수집 (각 클러스터는 1·3·5·7이 4프렛 안에 모인 묶음)
+        // cluster = { rootFret, notes: [{strIdx, fret, cell, degree}] }
+        const allClusters = [];
 
         voicings.forEach(voicingMode => {
-            // Map inversions to target scale degrees (Low to High string order)
             let targetDegrees = [];
             if (stringSet.length === 4) {
-                // Drop 2 chord voicing formulas
-                if (voicingMode === 'root') targetDegrees = [formula[0], formula[2], formula[3], formula[1]]; // R, 5, 7, 3
-                else if (voicingMode === '1st') targetDegrees = [formula[1], formula[3], formula[0], formula[2]]; // 3, 7, 1, 5
-                else if (voicingMode === '2nd') targetDegrees = [formula[2], formula[0], formula[1], formula[3]]; // 5, 1, 3, 7
-                else if (voicingMode === '3rd') targetDegrees = [formula[3], formula[1], formula[2], formula[0]]; // 7, 3, 5, 1
-            } else if (stringSet.length === 3) {
-                // Closed Triad voicing formulas
-                if (voicingMode === 'root') targetDegrees = [formula[0], formula[1], formula[2]]; // 1, 3, 5
-                else if (voicingMode === '1st') targetDegrees = [formula[1], formula[2], formula[0]]; // 3, 5, 1
-                else if (voicingMode === '2nd') targetDegrees = [formula[2], formula[0], formula[1]]; // 5, 1, 3
+                if (voicingMode === 'root') targetDegrees = [formula[0], formula[2], formula[3], formula[1]];
+                else if (voicingMode === '1st') targetDegrees = [formula[1], formula[3], formula[0], formula[2]];
+                else if (voicingMode === '2nd') targetDegrees = [formula[2], formula[0], formula[1], formula[3]];
+                else if (voicingMode === '3rd') targetDegrees = [formula[3], formula[1], formula[2], formula[0]];
+            } else {
+                if (voicingMode === 'root') targetDegrees = [formula[0], formula[1], formula[2]];
+                else if (voicingMode === '1st') targetDegrees = [formula[1], formula[2], formula[0]];
+                else if (voicingMode === '2nd') targetDegrees = [formula[2], formula[0], formula[1]];
             }
-
             if (targetDegrees.length === 0) return;
 
-            // Map targetDegrees to note names
             const stringNoteNames = targetDegrees.map(deg => {
                 const idx = formula.indexOf(deg);
-                if (idx === -1) return null;
-                return notes[idx].match(/^[A-Ga-g][b#]?/)[0];
+                return idx !== -1 ? notes[idx].match(/^[A-Ga-g][b#]?/)[0] : null;
             });
-
             if (stringNoteNames.includes(null)) return;
 
-            // Collect all fret cells for each note on their assigned string
             const stringFrets = sortedStrings.map((strIdx, i) => {
                 const noteName = stringNoteNames[i];
-                const cells = document.querySelectorAll(`#fretboard-container .string-${strIdx} .fret[data-note="${noteName}"]`);
-                return Array.from(cells).map(cell => ({
+                return Array.from(
+                    document.querySelectorAll(`#fretboard-container .string-${strIdx} .fret[data-note="${noteName}"]`)
+                ).map(cell => ({
                     fret: parseInt(cell.dataset.fret),
                     note: noteName,
                     degree: targetDegrees[i],
-                    cell: cell,
-                    strIdx: strIdx
+                    cell,
+                    strIdx
                 }));
             });
 
-            // Generate Cartesian product (combinations of frets across the selected strings)
             const combinations = [];
-            const generateCombos = (strIdx, currentCombo) => {
-                if (strIdx === stringFrets.length) {
-                    combinations.push([...currentCombo]);
-                    return;
-                }
-                stringFrets[strIdx].forEach(fretData => {
-                    currentCombo.push(fretData);
-                    generateCombos(strIdx + 1, currentCombo);
-                    currentCombo.pop();
-                });
+            const gen = (idx, curr) => {
+                if (idx === stringFrets.length) { combinations.push([...curr]); return; }
+                stringFrets[idx].forEach(d => { curr.push(d); gen(idx + 1, curr); curr.pop(); });
             };
-            generateCombos(0, []);
+            gen(0, []);
 
-            // Filter valid voicing shapes where the maximum fret span is <= 4 frets (ignoring open strings 0)
-            const validCombinations = combinations.filter(combo => {
-                const frets = combo.map(c => c.fret).filter(f => f > 0);
-                if (frets.length <= 1) return true;
-                const maxFret = Math.max(...frets);
-                const minFret = Math.min(...frets);
-                return (maxFret - minFret) <= 4;
-            });
-
-            // Record voicing membership for each cell
-            validCombinations.forEach(combo => {
-                combo.forEach(fretData => {
-                    const key = `string-${fretData.strIdx}-fret-${fretData.fret}`;
-                    if (!cellVoicingMap[key]) {
-                        cellVoicingMap[key] = {
-                            cell: fretData.cell,
-                            degree: fretData.degree,
-                            voicings: new Set()
-                        };
-                    }
-                    cellVoicingMap[key].voicings.add(voicingMode);
+            combinations
+                .filter(combo => {
+                    const frets = combo.map(c => c.fret).filter(f => f > 0);
+                    return frets.length <= 1 || Math.max(...frets) - Math.min(...frets) <= 4;
+                })
+                .forEach(combo => {
+                    // 클러스터의 기준: 근음(1도)이 있는 프렛 위치
+                    const rootNote = combo.find(n => n.degree === formula[0]);
+                    const rootFret = rootNote ? rootNote.fret : Math.min(...combo.map(n => n.fret));
+                    allClusters.push({ rootFret, notes: combo });
                 });
-            });
         });
 
-        // 3. Highlight all notes on the fretboard, applying color-coding according to voicing groups
-        notes.forEach((fullNote, idx) => {
-            const noteName = fullNote.match(/^[A-Ga-g][b#]?/)[0];
-            const deg = formula[idx];
-            const fretCells = document.querySelectorAll(`.fret[data-note="${noteName}"]`);
+        // 근음 프렛 위치 순서로 정렬 (넥 왼쪽 → 오른쪽)
+        allClusters.sort((a, b) => a.rootFret - b.rootFret);
 
-            fretCells.forEach(cell => {
-                const parentString = cell.closest('.string');
-                if (!parentString) return;
-                const strIdx = parseInt(parentString.className.match(/string-(\d+)/)[1]);
-                if (!stringSet.includes(strIdx)) return;
+        // 고유한 근음 프렛 위치마다 색 배정
+        const clusterColors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
+        const rootFretToColor = new Map();
+        let colorCount = 0;
+        allClusters.forEach(cluster => {
+            if (!rootFretToColor.has(cluster.rootFret)) {
+                rootFretToColor.set(cluster.rootFret, clusterColors[colorCount++ % clusterColors.length]);
+            }
+        });
 
-                const fretNum = parseInt(cell.dataset.fret);
-                const key = `string-${strIdx}-fret-${fretNum}`;
+        // 각 셀에 색 적용 (같은 셀이 여러 클러스터에 겹치면 근음이 가장 가까운 클러스터 색으로)
+        const paintedCells = new Set();
+        allClusters.forEach(cluster => {
+            const color = rootFretToColor.get(cluster.rootFret);
+            cluster.notes.forEach(({ cell, degree, strIdx, fret }) => {
+                const key = `${strIdx}-${fret}`;
+                if (paintedCells.has(key)) return;
+                paintedCells.add(key);
+
                 const marker = cell.querySelector('.note-marker');
-
                 if (marker) {
-                    marker.textContent = deg;
+                    marker.textContent = degree;
                     marker.classList.remove('hidden');
                     marker.classList.add('active');
-
-                    // Style colors corresponding to the legend
-                    const voicingColors = {
-                        'root': '#6366f1',  // Indigo
-                        '1st': '#10b981',   // Emerald
-                        '2nd': '#f59e0b',   // Amber
-                        '3rd': '#ec4899',   // Pink
-                        'multi': '#06b6d4',  // Cyan (Shared by multiple inversion shapes)
-                        'none': 'rgba(255, 255, 255, 0.15)' // Notes that don't form a compact shape
-                    };
-
-                    let finalColor = voicingColors.none;
-                    let shadowGlow = 'rgba(255, 255, 255, 0.1)';
-
-                    if (cellVoicingMap[key]) {
-                        const vList = Array.from(cellVoicingMap[key].voicings);
-                        if (vList.length > 1) {
-                            finalColor = voicingColors.multi;
-                            shadowGlow = voicingColors.multi;
-                        } else if (vList.length === 1) {
-                            finalColor = voicingColors[vList[0]];
-                            shadowGlow = voicingColors[vList[0]];
-                        }
-                    }
-
-                    marker.style.background = finalColor;
-                    marker.style.boxShadow = `0 0 10px ${shadowGlow}`;
+                    marker.style.background = color;
+                    marker.style.boxShadow = `0 0 10px ${color}`;
                     marker.style.borderColor = 'rgba(255, 255, 255, 0.4)';
                     marker.style.borderWidth = '1px';
                     marker.style.borderStyle = 'solid';
