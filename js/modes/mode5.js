@@ -78,7 +78,7 @@ export function mode5_render(container, currentKey = 'C') {
                                 <span style="color: var(--text-muted);">포지션 5</span>
                             </div>
                         </div>
-                        <div style="color: var(--text-muted); opacity: 0.7; font-size: 0.7rem;">같은 색 = 저음(베이스음) 기준으로 묶인 1·3·5·7 포지션</div>
+                        <div style="color: var(--text-muted); opacity: 0.7; font-size: 0.7rem;">같은 색 = 근음(1도) 줄+프렛 기준으로 묶인 포지션 · 3-2-1번 줄 포지션 포함</div>
                     </div>
 
                     <div style="margin-top: 1.5rem; display: flex; align-items: center; gap: 2.5rem;">
@@ -137,11 +137,11 @@ export function mode5_render(container, currentKey = 'C') {
     // Setup Fretboard
     initFretboard('fretboard-container');
 
-    // Helper: 근음(1도) 위치를 기준으로 1·3·5·7을 같은 색으로 묶어 표시
+    // Helper: 근음(1도)의 줄+프렛 기준으로 1·3·5·7을 같은 색으로 묶어 표시
     const highlightAllVoicingShapesOnFretboard = (notes, formula, stringSet) => {
         clearFretboard();
 
-        if (stringSet.length !== 3 && stringSet.length !== 4) {
+        if (stringSet.length < 3) {
             const labelsMap = {};
             notes.forEach((fullNote, idx) => {
                 const noteName = fullNote.match(/^[A-Ga-g][b#]?/)[0];
@@ -151,83 +151,102 @@ export function mode5_render(container, currentKey = 'C') {
             return;
         }
 
-        const sortedStrings = [...stringSet].sort((a, b) => b - a);
-        const voicings = stringSet.length === 4 ? ['root', '1st', '2nd', '3rd'] : ['root', '1st', '2nd'];
-
-        // 모든 유효한 보이싱 클러스터 수집 (각 클러스터는 1·3·5·7이 4프렛 안에 모인 묶음)
-        // cluster = { rootFret, notes: [{strIdx, fret, cell, degree}] }
+        const sortedStrings = [...stringSet].sort((a, b) => b - a); // 저음 줄부터 정렬
         const allClusters = [];
 
-        voicings.forEach(voicingMode => {
-            let targetDegrees = [];
-            if (stringSet.length === 4) {
-                if (voicingMode === 'root') targetDegrees = [formula[0], formula[2], formula[3], formula[1]];
-                else if (voicingMode === '1st') targetDegrees = [formula[1], formula[3], formula[0], formula[2]];
-                else if (voicingMode === '2nd') targetDegrees = [formula[2], formula[0], formula[1], formula[3]];
-                else if (voicingMode === '3rd') targetDegrees = [formula[3], formula[1], formula[2], formula[0]];
-            } else {
-                if (voicingMode === 'root') targetDegrees = [formula[0], formula[1], formula[2]];
-                else if (voicingMode === '1st') targetDegrees = [formula[1], formula[2], formula[0]];
-                else if (voicingMode === '2nd') targetDegrees = [formula[2], formula[0], formula[1]];
-            }
-            if (targetDegrees.length === 0) return;
+        // 보이싱 탐색 공통 함수: 주어진 줄 집합과 음정 배열로 유효 클러스터 수집
+        const searchVoicings = (searchStrings, searchFormula, searchNotes) => {
+            const voicingCount = searchStrings.length;
+            const voicings = voicingCount === 4
+                ? ['root', '1st', '2nd', '3rd']
+                : ['root', '1st', '2nd'];
 
-            const stringNoteNames = targetDegrees.map(deg => {
-                const idx = formula.indexOf(deg);
-                return idx !== -1 ? notes[idx].match(/^[A-Ga-g][b#]?/)[0] : null;
-            });
-            if (stringNoteNames.includes(null)) return;
+            voicings.forEach(voicingMode => {
+                let targetDegrees = [];
+                if (voicingCount === 4) {
+                    if (voicingMode === 'root') targetDegrees = [searchFormula[0], searchFormula[2], searchFormula[3], searchFormula[1]];
+                    else if (voicingMode === '1st') targetDegrees = [searchFormula[1], searchFormula[3], searchFormula[0], searchFormula[2]];
+                    else if (voicingMode === '2nd') targetDegrees = [searchFormula[2], searchFormula[0], searchFormula[1], searchFormula[3]];
+                    else if (voicingMode === '3rd') targetDegrees = [searchFormula[3], searchFormula[1], searchFormula[2], searchFormula[0]];
+                } else {
+                    if (voicingMode === 'root') targetDegrees = [searchFormula[0], searchFormula[1], searchFormula[2]];
+                    else if (voicingMode === '1st') targetDegrees = [searchFormula[1], searchFormula[2], searchFormula[0]];
+                    else if (voicingMode === '2nd') targetDegrees = [searchFormula[2], searchFormula[0], searchFormula[1]];
+                }
+                if (!targetDegrees.length) return;
 
-            const stringFrets = sortedStrings.map((strIdx, i) => {
-                const noteName = stringNoteNames[i];
-                return Array.from(
-                    document.querySelectorAll(`#fretboard-container .string-${strIdx} .fret[data-note="${noteName}"]`)
-                ).map(cell => ({
-                    fret: parseInt(cell.dataset.fret),
-                    note: noteName,
-                    degree: targetDegrees[i],
-                    cell,
-                    strIdx
-                }));
-            });
-
-            const combinations = [];
-            const gen = (idx, curr) => {
-                if (idx === stringFrets.length) { combinations.push([...curr]); return; }
-                stringFrets[idx].forEach(d => { curr.push(d); gen(idx + 1, curr); curr.pop(); });
-            };
-            gen(0, []);
-
-            combinations
-                .filter(combo => {
-                    const frets = combo.map(c => c.fret).filter(f => f > 0);
-                    return frets.length <= 1 || Math.max(...frets) - Math.min(...frets) <= 4;
-                })
-                .forEach(combo => {
-                    // 클러스터 기준: 저음(combo[0] = sortedStrings[0] = 가장 낮은 줄의 음) 위치
-                    const bassNote = combo[0];
-                    const bassKey = `${bassNote.strIdx}-${bassNote.fret}`;
-                    allClusters.push({ bassKey, bassFret: bassNote.fret, notes: combo });
+                const stringNoteNames = targetDegrees.map(deg => {
+                    const idx = searchFormula.indexOf(deg);
+                    return idx !== -1 ? searchNotes[idx].match(/^[A-Ga-g][b#]?/)[0] : null;
                 });
-        });
+                if (stringNoteNames.includes(null)) return;
 
-        // 저음 프렛 위치 순서로 정렬 (넥 왼쪽 → 오른쪽)
-        allClusters.sort((a, b) => a.bassFret - b.bassFret);
+                const stringFrets = searchStrings.map((strIdx, i) => {
+                    const noteName = stringNoteNames[i];
+                    return Array.from(
+                        document.querySelectorAll(`#fretboard-container .string-${strIdx} .fret[data-note="${noteName}"]`)
+                    ).map(cell => ({
+                        fret: parseInt(cell.dataset.fret),
+                        note: noteName,
+                        degree: targetDegrees[i],
+                        cell,
+                        strIdx
+                    }));
+                });
 
-        // 저음의 줄+프렛 조합이 고유한 각 클러스터에 색 배정
+                const combinations = [];
+                const gen = (idx, curr) => {
+                    if (idx === stringFrets.length) { combinations.push([...curr]); return; }
+                    stringFrets[idx].forEach(d => { curr.push(d); gen(idx + 1, curr); curr.pop(); });
+                };
+                gen(0, []);
+
+                combinations
+                    .filter(combo => {
+                        const frets = combo.map(c => c.fret).filter(f => f > 0);
+                        return frets.length <= 1 || Math.max(...frets) - Math.min(...frets) <= 4;
+                    })
+                    .forEach(combo => {
+                        // 클러스터 기준: 근음(1도)의 줄+프렛 위치
+                        const rootNote = combo.find(n => n.degree === searchFormula[0]);
+                        const rootKey = rootNote
+                            ? `${rootNote.strIdx}-${rootNote.fret}`
+                            : `${combo[0].strIdx}-${combo[0].fret}`;
+                        const rootFret = rootNote ? rootNote.fret : combo[0].fret;
+                        allClusters.push({ rootKey, rootFret, notes: combo });
+                    });
+            });
+        };
+
+        // 1. 선택된 전체 줄 기준 보이싱 탐색 (e.g. 4-3-2-1번 줄, 근음이 4번 줄에 있는 포지션 포함)
+        searchVoicings(sortedStrings, formula, notes);
+
+        // 2. 4줄 이상 선택 시, 상위 3줄(3-2-1번 줄)도 별도 탐색
+        //    → 3번줄을 근음으로 하는 포지션 (3-2-1번 줄 연주 형태) 추가
+        if (sortedStrings.length >= 4) {
+            const top3Strings = sortedStrings.slice(-3); // 가장 높은 음 3줄
+            const triFormula = formula.slice(0, 3);      // 1·3·5 (7도 제외 트라이어드)
+            const triNotes = notes.slice(0, 3);
+            searchVoicings(top3Strings, triFormula, triNotes);
+        }
+
+        // 근음 프렛 순서로 정렬 (넥 왼쪽 → 오른쪽)
+        allClusters.sort((a, b) => a.rootFret - b.rootFret);
+
+        // 근음 줄+프렛이 고유한 클러스터마다 색 배정
         const clusterColors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
-        const bassKeyToColor = new Map();
+        const rootKeyToColor = new Map();
         let colorCount = 0;
         allClusters.forEach(cluster => {
-            if (!bassKeyToColor.has(cluster.bassKey)) {
-                bassKeyToColor.set(cluster.bassKey, clusterColors[colorCount++ % clusterColors.length]);
+            if (!rootKeyToColor.has(cluster.rootKey)) {
+                rootKeyToColor.set(cluster.rootKey, clusterColors[colorCount++ % clusterColors.length]);
             }
         });
 
-        // 각 셀에 색 적용 (같은 줄+프렛이 겹치면 저음 기준 첫 클러스터 색으로)
+        // 각 셀에 색 적용 (같은 줄+프렛 겹치면 첫 클러스터 색 유지)
         const paintedCells = new Set();
         allClusters.forEach(cluster => {
-            const color = bassKeyToColor.get(cluster.bassKey);
+            const color = rootKeyToColor.get(cluster.rootKey);
             cluster.notes.forEach(({ cell, degree, strIdx, fret }) => {
                 const key = `${strIdx}-${fret}`;
                 if (paintedCells.has(key)) return;
