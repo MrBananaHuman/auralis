@@ -231,39 +231,57 @@ export function mode5_render(container, currentKey = 'C') {
             searchVoicings(sortedStrings.slice(i, i + 3), triFormula, triNotes);
         }
 
-        // 근음 프렛 순서로 정렬 (넥 왼쪽 → 오른쪽)
-        allClusters.sort((a, b) => a.rootFret - b.rootFret);
+        // 클러스터를 최저 프렛 순서로 정렬
+        allClusters.sort((a, b) => {
+            const aMin = Math.min(...a.notes.map(n => n.fret).filter(f => f > 0), 999);
+            const bMin = Math.min(...b.notes.map(n => n.fret).filter(f => f > 0), 999);
+            return aMin - bMin;
+        });
 
-        // 근음 줄+프렛이 고유한 클러스터마다 색 배정
+        // 인접 프렛 영역(±3프렛)의 클러스터를 하나의 포지션으로 병합
+        // → 같은 손 위치에서 연주되는 1·3·5·7 세트가 같은 색으로 묶임
         const clusterColors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
-        const rootKeyToColor = new Map();
-        let colorCount = 0;
+        const positions = []; // { refFret, color, clusters[] }
+
         allClusters.forEach(cluster => {
-            if (!rootKeyToColor.has(cluster.rootKey)) {
-                rootKeyToColor.set(cluster.rootKey, clusterColors[colorCount++ % clusterColors.length]);
+            const nonOpenFrets = cluster.notes.map(n => n.fret).filter(f => f > 0);
+            if (!nonOpenFrets.length) return;
+            const clusterMin = Math.min(...nonOpenFrets);
+
+            // 기존 포지션 중 3프렛 이내면 같은 포지션으로 병합
+            const match = positions.find(p => Math.abs(p.refFret - clusterMin) <= 3);
+            if (match) {
+                match.clusters.push(cluster);
+            } else {
+                positions.push({
+                    refFret: clusterMin,
+                    color: clusterColors[positions.length % clusterColors.length],
+                    clusters: [cluster]
+                });
             }
         });
 
-        // 각 셀에 색 적용 (같은 줄+프렛 겹치면 첫 클러스터 색 유지)
+        // 포지션별 색 적용: 같은 포지션의 1·3·5·7이 같은 색
         const paintedCells = new Set();
-        allClusters.forEach(cluster => {
-            const color = rootKeyToColor.get(cluster.rootKey);
-            cluster.notes.forEach(({ cell, degree, strIdx, fret }) => {
-                const key = `${strIdx}-${fret}`;
-                if (paintedCells.has(key)) return;
-                paintedCells.add(key);
+        positions.forEach(pos => {
+            pos.clusters.forEach(cluster => {
+                cluster.notes.forEach(({ cell, degree, strIdx, fret }) => {
+                    const key = `${strIdx}-${fret}`;
+                    if (paintedCells.has(key)) return;
+                    paintedCells.add(key);
 
-                const marker = cell.querySelector('.note-marker');
-                if (marker) {
-                    marker.textContent = degree;
-                    marker.classList.remove('hidden');
-                    marker.classList.add('active');
-                    marker.style.background = color;
-                    marker.style.boxShadow = `0 0 10px ${color}`;
-                    marker.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-                    marker.style.borderWidth = '1px';
-                    marker.style.borderStyle = 'solid';
-                }
+                    const marker = cell.querySelector('.note-marker');
+                    if (marker) {
+                        marker.textContent = degree;
+                        marker.classList.remove('hidden');
+                        marker.classList.add('active');
+                        marker.style.background = pos.color;
+                        marker.style.boxShadow = `0 0 10px ${pos.color}`;
+                        marker.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                        marker.style.borderWidth = '1px';
+                        marker.style.borderStyle = 'solid';
+                    }
+                });
             });
         });
     };
