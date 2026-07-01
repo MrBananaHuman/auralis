@@ -153,56 +153,55 @@ export function mode5_render(container, currentKey = 'C') {
 
         const sortedStrings = [...stringSet].sort((a, b) => b - a); // 저음 줄부터 정렬
 
-        // 음정별 음이름 + degree 매핑
         const degreeNoteNames = formula.map((deg, i) => ({
             degree: deg,
             noteName: notes[i].match(/^[A-Ga-g][b#]?/)[0]
         }));
-        const rootNoteName = degreeNoteNames[0].noteName;
 
         const allClusters = [];
 
-        // 무조건 1도를 저음 기준으로: 각 줄에서 근음(1) 찾고 위 줄들에 3→5→7 순서로 배치
-        sortedStrings.forEach((rootStrIdx, rootStrPos) => {
-            const higherStrings = sortedStrings.slice(rootStrPos + 1); // 고음 방향 줄들
-            if (higherStrings.length === 0) return;
-
-            const rootCells = document.querySelectorAll(
-                `#fretboard-container .string-${rootStrIdx} .fret[data-note="${rootNoteName}"]`
+        // 주어진 줄 조합에 degree 순서대로 배치, 5프렛 이내 모든 경우 수집
+        const searchCombo = (strings, degrees) => {
+            // 각 줄에서 해당 degree 음이름의 fret 목록 수집
+            const options = strings.map((strIdx, i) =>
+                Array.from(document.querySelectorAll(
+                    `#fretboard-container .string-${strIdx} .fret[data-note="${degrees[i].noteName}"]`
+                )).map(cell => ({ strIdx, fret: parseInt(cell.dataset.fret), cell, degree: degrees[i].degree }))
             );
 
-            rootCells.forEach(rootCell => {
-                const rootFret = parseInt(rootCell.dataset.fret);
-                const clusterNotes = [{
-                    strIdx: rootStrIdx, fret: rootFret, cell: rootCell, degree: formula[0]
-                }];
-
-                // 고음 방향 줄에 3→5→7 순서로 하나씩 배치 (5프렛 이내)
-                const toAssign = degreeNoteNames.slice(1, 1 + higherStrings.length);
-                for (let i = 0; i < toAssign.length; i++) {
-                    const { degree, noteName } = toAssign[i];
-                    const strIdx = higherStrings[i];
-
-                    const cells = document.querySelectorAll(
-                        `#fretboard-container .string-${strIdx} .fret[data-note="${noteName}"]`
-                    );
-                    let bestCell = null, bestDist = Infinity;
-                    cells.forEach(cell => {
-                        const fret = parseInt(cell.dataset.fret);
-                        const dist = Math.abs(fret - rootFret);
-                        if (dist <= 5 && dist < bestDist) { bestDist = dist; bestCell = cell; }
-                    });
-
-                    if (!bestCell) break;
-                    clusterNotes.push({ strIdx, fret: parseInt(bestCell.dataset.fret), cell: bestCell, degree });
+            // 카테시안 곱 → 5프렛 스팬 이내인 것만 클러스터로 저장
+            const gen = (idx, current) => {
+                if (idx === options.length) {
+                    const frets = current.map(n => n.fret).filter(f => f > 0);
+                    if (!frets.length) return;
+                    if (frets.length > 1 && Math.max(...frets) - Math.min(...frets) > 5) return;
+                    allClusters.push({ rootFret: current[0].fret, rootStrIdx: strings[0], notes: [...current] });
+                    return;
                 }
+                options[idx].forEach(opt => { current.push(opt); gen(idx + 1, current); current.pop(); });
+            };
+            gen(0, []);
+        };
 
-                // 최소 3음(1·3·5) 이상이면 유효한 클러스터로 등록
-                if (clusterNotes.length >= 3) {
-                    allClusters.push({ rootFret, rootStrIdx, notes: clusterNotes });
-                }
-            });
-        });
+        // 선택 줄에서 모든 N줄 조합 생성
+        const getCombos = (arr, n) => {
+            if (n === 0) return [[]];
+            return arr.flatMap((v, i) => getCombos(arr.slice(i + 1), n - 1).map(rest => [v, ...rest]));
+        };
+
+        const n = Math.min(formula.length, 4);
+        // 4음(1·3·5·7) 조합
+        if (n === 4 && sortedStrings.length >= 4) {
+            getCombos(sortedStrings, 4).forEach(combo =>
+                searchCombo(combo, degreeNoteNames.slice(0, 4))
+            );
+        }
+        // 3음(1·3·5) 조합 — 4음 코드여도 포함
+        if (sortedStrings.length >= 3) {
+            getCombos(sortedStrings, 3).forEach(combo =>
+                searchCombo(combo, degreeNoteNames.slice(0, 3))
+            );
+        }
 
         // 클러스터를 근음 프렛 순서로 정렬
         allClusters.sort((a, b) => a.rootFret - b.rootFret);

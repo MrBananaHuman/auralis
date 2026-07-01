@@ -3372,48 +3372,44 @@ function mode5_render(container, currentKey = 'C') {
             degree: deg,
             noteName: notes[i].match(/^[A-Ga-g][b#]?/)[0]
         }));
-        const rootNoteName = degreeNoteNames[0].noteName;
 
         const allClusters = [];
 
-        sortedStrings.forEach((rootStrIdx, rootStrPos) => {
-            const higherStrings = sortedStrings.slice(rootStrPos + 1);
-            if (higherStrings.length === 0) return;
-
-            const rootCells = document.querySelectorAll(
-                `#fretboard-container .string-${rootStrIdx} .fret[data-note="${rootNoteName}"]`
+        const searchCombo = (strings, degrees) => {
+            const options = strings.map((strIdx, i) =>
+                Array.from(document.querySelectorAll(
+                    `#fretboard-container .string-${strIdx} .fret[data-note="${degrees[i].noteName}"]`
+                )).map(cell => ({ strIdx, fret: parseInt(cell.dataset.fret), cell, degree: degrees[i].degree }))
             );
-
-            rootCells.forEach(rootCell => {
-                const rootFret = parseInt(rootCell.dataset.fret);
-                const clusterNotes = [{
-                    strIdx: rootStrIdx, fret: rootFret, cell: rootCell, degree: formula[0]
-                }];
-
-                const toAssign = degreeNoteNames.slice(1, 1 + higherStrings.length);
-                for (let i = 0; i < toAssign.length; i++) {
-                    const { degree, noteName } = toAssign[i];
-                    const strIdx = higherStrings[i];
-
-                    const cells = document.querySelectorAll(
-                        `#fretboard-container .string-${strIdx} .fret[data-note="${noteName}"]`
-                    );
-                    let bestCell = null, bestDist = Infinity;
-                    cells.forEach(cell => {
-                        const fret = parseInt(cell.dataset.fret);
-                        const dist = Math.abs(fret - rootFret);
-                        if (dist <= 5 && dist < bestDist) { bestDist = dist; bestCell = cell; }
-                    });
-
-                    if (!bestCell) break;
-                    clusterNotes.push({ strIdx, fret: parseInt(bestCell.dataset.fret), cell: bestCell, degree });
+            const gen = (idx, current) => {
+                if (idx === options.length) {
+                    const frets = current.map(n => n.fret).filter(f => f > 0);
+                    if (!frets.length) return;
+                    if (frets.length > 1 && Math.max(...frets) - Math.min(...frets) > 5) return;
+                    allClusters.push({ rootFret: current[0].fret, rootStrIdx: strings[0], notes: [...current] });
+                    return;
                 }
+                options[idx].forEach(opt => { current.push(opt); gen(idx + 1, current); current.pop(); });
+            };
+            gen(0, []);
+        };
 
-                if (clusterNotes.length >= 3) {
-                    allClusters.push({ rootFret, rootStrIdx, notes: clusterNotes });
-                }
-            });
-        });
+        const getCombos = (arr, n) => {
+            if (n === 0) return [[]];
+            return arr.flatMap((v, i) => getCombos(arr.slice(i + 1), n - 1).map(rest => [v, ...rest]));
+        };
+
+        const n = Math.min(formula.length, 4);
+        if (n === 4 && sortedStrings.length >= 4) {
+            getCombos(sortedStrings, 4).forEach(combo =>
+                searchCombo(combo, degreeNoteNames.slice(0, 4))
+            );
+        }
+        if (sortedStrings.length >= 3) {
+            getCombos(sortedStrings, 3).forEach(combo =>
+                searchCombo(combo, degreeNoteNames.slice(0, 3))
+            );
+        }
 
         allClusters.sort((a, b) => a.rootFret - b.rootFret);
 
