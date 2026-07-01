@@ -189,17 +189,11 @@ export function mode5_render(container, currentKey = 'C') {
             return arr.flatMap((v, i) => getCombos(arr.slice(i + 1), n - 1).map(rest => [v, ...rest]));
         };
 
-        const n = Math.min(formula.length, 4);
-        // 4음(1·3·5·7) 조합
-        if (n === 4 && sortedStrings.length >= 4) {
-            getCombos(sortedStrings, 4).forEach(combo =>
-                searchCombo(combo, degreeNoteNames.slice(0, 4))
-            );
-        }
-        // 3음(1·3·5) 조합 — 4음 코드여도 포함
-        if (sortedStrings.length >= 3) {
-            getCombos(sortedStrings, 3).forEach(combo =>
-                searchCombo(combo, degreeNoteNames.slice(0, 3))
+        // 코드 음수에 맞는 줄 조합만 탐색 (7th 코드 → 4줄, 3음 코드 → 3줄)
+        const n = Math.min(formula.length >= 4 ? 4 : 3, sortedStrings.length);
+        if (n >= 3) {
+            getCombos(sortedStrings, n).forEach(combo =>
+                searchCombo(combo, degreeNoteNames.slice(0, n))
             );
         }
 

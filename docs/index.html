@@ -3399,15 +3399,10 @@ function mode5_render(container, currentKey = 'C') {
             return arr.flatMap((v, i) => getCombos(arr.slice(i + 1), n - 1).map(rest => [v, ...rest]));
         };
 
-        const n = Math.min(formula.length, 4);
-        if (n === 4 && sortedStrings.length >= 4) {
-            getCombos(sortedStrings, 4).forEach(combo =>
-                searchCombo(combo, degreeNoteNames.slice(0, 4))
-            );
-        }
-        if (sortedStrings.length >= 3) {
-            getCombos(sortedStrings, 3).forEach(combo =>
-                searchCombo(combo, degreeNoteNames.slice(0, 3))
+        const n = Math.min(formula.length >= 4 ? 4 : 3, sortedStrings.length);
+        if (n >= 3) {
+            getCombos(sortedStrings, n).forEach(combo =>
+                searchCombo(combo, degreeNoteNames.slice(0, n))
             );
         }
 
