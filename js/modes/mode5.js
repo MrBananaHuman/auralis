@@ -152,92 +152,60 @@ export function mode5_render(container, currentKey = 'C') {
         }
 
         const sortedStrings = [...stringSet].sort((a, b) => b - a); // 저음 줄부터 정렬
+
+        // 음정별 음이름 + degree 매핑
+        const degreeNoteNames = formula.map((deg, i) => ({
+            degree: deg,
+            noteName: notes[i].match(/^[A-Ga-g][b#]?/)[0]
+        }));
+        const rootNoteName = degreeNoteNames[0].noteName;
+
         const allClusters = [];
 
-        // 보이싱 탐색 공통 함수: 주어진 줄 집합과 음정 배열로 유효 클러스터 수집
-        const searchVoicings = (searchStrings, searchFormula, searchNotes) => {
-            const voicingCount = searchStrings.length;
-            const voicings = voicingCount === 4
-                ? ['root', '1st', '2nd', '3rd']
-                : ['root', '1st', '2nd'];
+        // 무조건 1도를 저음 기준으로: 각 줄에서 근음(1) 찾고 위 줄들에 3→5→7 순서로 배치
+        sortedStrings.forEach((rootStrIdx, rootStrPos) => {
+            const higherStrings = sortedStrings.slice(rootStrPos + 1); // 고음 방향 줄들
+            if (higherStrings.length === 0) return;
 
-            voicings.forEach(voicingMode => {
-                let targetDegrees = [];
-                if (voicingCount === 4) {
-                    // 저음 → 고음 순서: 클로즈 포지션 (1→3→5→7 순서로 줄 배치)
-                    if (voicingMode === 'root') targetDegrees = [searchFormula[0], searchFormula[1], searchFormula[2], searchFormula[3]]; // 1-3-5-7
-                    else if (voicingMode === '1st') targetDegrees = [searchFormula[1], searchFormula[2], searchFormula[3], searchFormula[0]]; // 3-5-7-1
-                    else if (voicingMode === '2nd') targetDegrees = [searchFormula[2], searchFormula[3], searchFormula[0], searchFormula[1]]; // 5-7-1-3
-                    else if (voicingMode === '3rd') targetDegrees = [searchFormula[3], searchFormula[0], searchFormula[1], searchFormula[2]]; // 7-1-3-5
-                } else {
-                    if (voicingMode === 'root') targetDegrees = [searchFormula[0], searchFormula[1], searchFormula[2]];
-                    else if (voicingMode === '1st') targetDegrees = [searchFormula[1], searchFormula[2], searchFormula[0]];
-                    else if (voicingMode === '2nd') targetDegrees = [searchFormula[2], searchFormula[0], searchFormula[1]];
-                }
-                if (!targetDegrees.length) return;
+            const rootCells = document.querySelectorAll(
+                `#fretboard-container .string-${rootStrIdx} .fret[data-note="${rootNoteName}"]`
+            );
 
-                const stringNoteNames = targetDegrees.map(deg => {
-                    const idx = searchFormula.indexOf(deg);
-                    return idx !== -1 ? searchNotes[idx].match(/^[A-Ga-g][b#]?/)[0] : null;
-                });
-                if (stringNoteNames.includes(null)) return;
+            rootCells.forEach(rootCell => {
+                const rootFret = parseInt(rootCell.dataset.fret);
+                const clusterNotes = [{
+                    strIdx: rootStrIdx, fret: rootFret, cell: rootCell, degree: formula[0]
+                }];
 
-                const stringFrets = searchStrings.map((strIdx, i) => {
-                    const noteName = stringNoteNames[i];
-                    return Array.from(
-                        document.querySelectorAll(`#fretboard-container .string-${strIdx} .fret[data-note="${noteName}"]`)
-                    ).map(cell => ({
-                        fret: parseInt(cell.dataset.fret),
-                        note: noteName,
-                        degree: targetDegrees[i],
-                        cell,
-                        strIdx
-                    }));
-                });
+                // 고음 방향 줄에 3→5→7 순서로 하나씩 배치 (5프렛 이내)
+                const toAssign = degreeNoteNames.slice(1, 1 + higherStrings.length);
+                for (let i = 0; i < toAssign.length; i++) {
+                    const { degree, noteName } = toAssign[i];
+                    const strIdx = higherStrings[i];
 
-                const combinations = [];
-                const gen = (idx, curr) => {
-                    if (idx === stringFrets.length) { combinations.push([...curr]); return; }
-                    stringFrets[idx].forEach(d => { curr.push(d); gen(idx + 1, curr); curr.pop(); });
-                };
-                gen(0, []);
-
-                combinations
-                    .filter(combo => {
-                        const frets = combo.map(c => c.fret).filter(f => f > 0);
-                        return frets.length <= 1 || Math.max(...frets) - Math.min(...frets) <= 5;
-                    })
-                    .forEach(combo => {
-                        // 클러스터 기준: 근음(1도)의 줄+프렛 위치
-                        const rootNote = combo.find(n => n.degree === searchFormula[0]);
-                        const rootKey = rootNote
-                            ? `${rootNote.strIdx}-${rootNote.fret}`
-                            : `${combo[0].strIdx}-${combo[0].fret}`;
-                        const rootFret = rootNote ? rootNote.fret : combo[0].fret;
-                        allClusters.push({ rootKey, rootFret, notes: combo });
+                    const cells = document.querySelectorAll(
+                        `#fretboard-container .string-${strIdx} .fret[data-note="${noteName}"]`
+                    );
+                    let bestCell = null, bestDist = Infinity;
+                    cells.forEach(cell => {
+                        const fret = parseInt(cell.dataset.fret);
+                        const dist = Math.abs(fret - rootFret);
+                        if (dist <= 5 && dist < bestDist) { bestDist = dist; bestCell = cell; }
                     });
+
+                    if (!bestCell) break;
+                    clusterNotes.push({ strIdx, fret: parseInt(bestCell.dataset.fret), cell: bestCell, degree });
+                }
+
+                // 최소 3음(1·3·5) 이상이면 유효한 클러스터로 등록
+                if (clusterNotes.length >= 3) {
+                    allClusters.push({ rootFret, rootStrIdx, notes: clusterNotes });
+                }
             });
-        };
-
-        // 인접 4줄 슬라이딩 윈도우: 6-5-4-3, 5-4-3-2, 4-3-2-1 등 각 4줄 조합 탐색
-        // → 5번·6번 줄 근음 포지션도 선택 줄에 포함되어 있으면 자동 포함
-        for (let i = 0; i <= sortedStrings.length - 4; i++) {
-            searchVoicings(sortedStrings.slice(i, i + 4), formula, notes);
-        }
-
-        // 인접 3줄 슬라이딩 윈도우: 3-2-1, 4-3-2, 5-4-3, 6-5-4 등 트라이어드 탐색
-        const triFormula = formula.slice(0, 3);
-        const triNotes = notes.slice(0, 3);
-        for (let i = 0; i <= sortedStrings.length - 3; i++) {
-            searchVoicings(sortedStrings.slice(i, i + 3), triFormula, triNotes);
-        }
-
-        // 클러스터를 최저 프렛 순서로 정렬
-        allClusters.sort((a, b) => {
-            const aMin = Math.min(...a.notes.map(n => n.fret).filter(f => f > 0), 999);
-            const bMin = Math.min(...b.notes.map(n => n.fret).filter(f => f > 0), 999);
-            return aMin - bMin;
         });
+
+        // 클러스터를 근음 프렛 순서로 정렬
+        allClusters.sort((a, b) => a.rootFret - b.rootFret);
 
         // 인접 프렛 영역(±3프렛)의 클러스터를 하나의 포지션으로 병합
         // → 같은 손 위치에서 연주되는 1·3·5·7 세트가 같은 색으로 묶임
