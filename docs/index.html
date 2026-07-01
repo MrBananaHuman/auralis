@@ -3356,7 +3356,14 @@ function mode5_render(container, currentKey = 'C') {
     const highlightAllVoicingShapesOnFretboard = (notes, formula, stringSet) => {
         clearFretboard();
 
-        if (stringSet.length < 3) {
+        // Dynamically toggle 3rd inversion legend item depending on 3-string vs 4-string mode
+        const legend3rd = container.querySelector('#legend-3rd-item');
+        if (legend3rd) {
+            legend3rd.style.display = stringSet.length === 4 ? 'flex' : 'none';
+        }
+
+        // 1. If string set is not exactly 3 or 4 strings, show all notes in default color
+        if (stringSet.length !== 3 && stringSet.length !== 4) {
             const labelsMap = {};
             notes.forEach((fullNote, idx) => {
                 const noteName = fullNote.match(/^[A-Ga-g][b#]?/)[0];
@@ -3366,88 +3373,144 @@ function mode5_render(container, currentKey = 'C') {
             return;
         }
 
+        // 2. Sort stringSet from lowest pitch (highest index, e.g. 5 for low E) to highest pitch
         const sortedStrings = [...stringSet].sort((a, b) => b - a);
+        const voicings = stringSet.length === 4 ? ['root', '1st', '2nd', '3rd'] : ['root', '1st', '2nd'];
 
-        const degreeNoteNames = formula.map((deg, i) => ({
-            degree: deg,
-            noteName: notes[i].match(/^[A-Ga-g][b#]?/)[0]
-        }));
+        // Map containing cell identifier -> sets of voicing shapes they belong to
+        const cellVoicingMap = {};
 
-        const allClusters = [];
+        voicings.forEach(voicingMode => {
+            // Map inversions to target scale degrees (Low to High string order)
+            let targetDegrees = [];
+            if (stringSet.length === 4) {
+                // Drop 2 chord voicing formulas
+                if (voicingMode === 'root') targetDegrees = [formula[0], formula[2], formula[3], formula[1]]; // R, 5, 7, 3
+                else if (voicingMode === '1st') targetDegrees = [formula[1], formula[3], formula[0], formula[2]]; // 3, 7, 1, 5
+                else if (voicingMode === '2nd') targetDegrees = [formula[2], formula[0], formula[1], formula[3]]; // 5, 1, 3, 7
+                else if (voicingMode === '3rd') targetDegrees = [formula[3], formula[1], formula[2], formula[0]]; // 7, 3, 5, 1
+            } else if (stringSet.length === 3) {
+                // Closed Triad voicing formulas
+                if (voicingMode === 'root') targetDegrees = [formula[0], formula[1], formula[2]]; // 1, 3, 5
+                else if (voicingMode === '1st') targetDegrees = [formula[1], formula[2], formula[0]]; // 3, 5, 1
+                else if (voicingMode === '2nd') targetDegrees = [formula[2], formula[0], formula[1]]; // 5, 1, 3
+            }
 
-        const searchCombo = (strings, degrees) => {
-            const options = strings.map((strIdx, i) =>
-                Array.from(document.querySelectorAll(
-                    `#fretboard-container .string-${strIdx} .fret[data-note="${degrees[i].noteName}"]`
-                )).map(cell => ({ strIdx, fret: parseInt(cell.dataset.fret), cell, degree: degrees[i].degree }))
-            );
-            const gen = (idx, current) => {
-                if (idx === options.length) {
-                    const frets = current.map(n => n.fret).filter(f => f > 0);
-                    if (!frets.length) return;
-                    if (frets.length > 1 && Math.max(...frets) - Math.min(...frets) > 5) return;
-                    allClusters.push({ rootFret: current[0].fret, rootStrIdx: strings[0], notes: [...current] });
+            if (targetDegrees.length === 0) return;
+
+            // Map targetDegrees to note names
+            const stringNoteNames = targetDegrees.map(deg => {
+                const idx = formula.indexOf(deg);
+                if (idx === -1) return null;
+                return notes[idx].match(/^[A-Ga-g][b#]?/)[0];
+            });
+
+            if (stringNoteNames.includes(null)) return;
+
+            // Collect all fret cells for each note on their assigned string
+            const stringFrets = sortedStrings.map((strIdx, i) => {
+                const noteName = stringNoteNames[i];
+                const cells = document.querySelectorAll(`#fretboard-container .string-${strIdx} .fret[data-note="${noteName}"]`);
+                return Array.from(cells).map(cell => ({
+                    fret: parseInt(cell.dataset.fret),
+                    note: noteName,
+                    degree: targetDegrees[i],
+                    cell: cell,
+                    strIdx: strIdx
+                }));
+            });
+
+            // Generate Cartesian product (combinations of frets across the selected strings)
+            const combinations = [];
+            const generateCombos = (strIdx, currentCombo) => {
+                if (strIdx === stringFrets.length) {
+                    combinations.push([...currentCombo]);
                     return;
                 }
-                options[idx].forEach(opt => { current.push(opt); gen(idx + 1, current); current.pop(); });
-            };
-            gen(0, []);
-        };
-
-        const getCombos = (arr, n) => {
-            if (n === 0) return [[]];
-            return arr.flatMap((v, i) => getCombos(arr.slice(i + 1), n - 1).map(rest => [v, ...rest]));
-        };
-
-        const n = Math.min(formula.length >= 4 ? 4 : 3, sortedStrings.length);
-        if (n >= 3) {
-            getCombos(sortedStrings, n).forEach(combo =>
-                searchCombo(combo, degreeNoteNames.slice(0, n))
-            );
-        }
-
-        allClusters.sort((a, b) => a.rootFret - b.rootFret);
-
-        const clusterColors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
-        const positions = [];
-
-        allClusters.forEach(cluster => {
-            const nonOpenFrets = cluster.notes.map(n => n.fret).filter(f => f > 0);
-            if (!nonOpenFrets.length) return;
-            const clusterMin = Math.min(...nonOpenFrets);
-
-            const match = positions.find(p => Math.abs(p.refFret - clusterMin) <= 3);
-            if (match) {
-                match.clusters.push(cluster);
-            } else {
-                positions.push({
-                    refFret: clusterMin,
-                    color: clusterColors[positions.length % clusterColors.length],
-                    clusters: [cluster]
+                stringFrets[strIdx].forEach(fretData => {
+                    currentCombo.push(fretData);
+                    generateCombos(strIdx + 1, currentCombo);
+                    currentCombo.pop();
                 });
-            }
+            };
+            generateCombos(0, []);
+
+            // Filter valid voicing shapes where the maximum fret span is <= 4 frets (ignoring open strings 0)
+            const validCombinations = combinations.filter(combo => {
+                const frets = combo.map(c => c.fret).filter(f => f > 0);
+                if (frets.length <= 1) return true;
+                const maxFret = Math.max(...frets);
+                const minFret = Math.min(...frets);
+                return (maxFret - minFret) <= 4;
+            });
+
+            // Record voicing membership for each cell
+            validCombinations.forEach(combo => {
+                combo.forEach(fretData => {
+                    const key = `string-${fretData.strIdx}-fret-${fretData.fret}`;
+                    if (!cellVoicingMap[key]) {
+                        cellVoicingMap[key] = {
+                            cell: fretData.cell,
+                            degree: fretData.degree,
+                            voicings: new Set()
+                        };
+                    }
+                    cellVoicingMap[key].voicings.add(voicingMode);
+                });
+            });
         });
 
-        const paintedCells = new Set();
-        positions.forEach(pos => {
-            pos.clusters.forEach(cluster => {
-                cluster.notes.forEach(({ cell, degree, strIdx, fret }) => {
-                    const key = `${strIdx}-${fret}`;
-                    if (paintedCells.has(key)) return;
-                    paintedCells.add(key);
+        // 3. Highlight all notes on the fretboard, applying color-coding according to voicing groups
+        notes.forEach((fullNote, idx) => {
+            const noteName = fullNote.match(/^[A-Ga-g][b#]?/)[0];
+            const deg = formula[idx];
+            const fretCells = document.querySelectorAll(`.fret[data-note="${noteName}"]`);
 
-                    const marker = cell.querySelector('.note-marker');
-                    if (marker) {
-                        marker.textContent = degree;
-                        marker.classList.remove('hidden');
-                        marker.classList.add('active');
-                        marker.style.background = pos.color;
-                        marker.style.boxShadow = `0 0 10px ${pos.color}`;
-                        marker.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-                        marker.style.borderWidth = '1px';
-                        marker.style.borderStyle = 'solid';
+            fretCells.forEach(cell => {
+                const parentString = cell.closest('.string');
+                if (!parentString) return;
+                const strIdx = parseInt(parentString.className.match(/string-(\d+)/)[1]);
+                if (!stringSet.includes(strIdx)) return;
+
+                const fretNum = parseInt(cell.dataset.fret);
+                const key = `string-${strIdx}-fret-${fretNum}`;
+                const marker = cell.querySelector('.note-marker');
+
+                if (marker) {
+                    marker.textContent = deg;
+                    marker.classList.remove('hidden');
+                    marker.classList.add('active');
+
+                    // Style colors corresponding to the legend
+                    const voicingColors = {
+                        'root': '#6366f1',  // Indigo
+                        '1st': '#10b981',   // Emerald
+                        '2nd': '#f59e0b',   // Amber
+                        '3rd': '#ec4899',   // Pink
+                        'multi': '#06b6d4',  // Cyan (Shared by multiple inversion shapes)
+                        'none': 'rgba(255, 255, 255, 0.15)' // Notes that don't form a compact shape
+                    };
+
+                    let finalColor = voicingColors.none;
+                    let shadowGlow = 'rgba(255, 255, 255, 0.1)';
+
+                    if (cellVoicingMap[key]) {
+                        const vList = Array.from(cellVoicingMap[key].voicings);
+                        if (vList.length > 1) {
+                            finalColor = voicingColors.multi;
+                            shadowGlow = voicingColors.multi;
+                        } else if (vList.length === 1) {
+                            finalColor = voicingColors[vList[0]];
+                            shadowGlow = voicingColors[vList[0]];
+                        }
                     }
-                });
+
+                    marker.style.background = finalColor;
+                    marker.style.boxShadow = `0 0 10px ${shadowGlow}`;
+                    marker.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                    marker.style.borderWidth = '1px';
+                    marker.style.borderStyle = 'solid';
+                }
             });
         });
     };
