@@ -78,7 +78,7 @@ export function mode5_render(container, currentKey = 'C') {
                                 <span style="color: var(--text-muted);">포지션 5</span>
                             </div>
                         </div>
-                        <div style="color: var(--text-muted); opacity: 0.7; font-size: 0.7rem;">같은 색 = 근음(1도)을 기준으로 묶인 1·3·5·7</div>
+                        <div style="color: var(--text-muted); opacity: 0.7; font-size: 0.7rem;">같은 색 = 저음(베이스음) 기준으로 묶인 1·3·5·7 포지션</div>
                     </div>
 
                     <div style="margin-top: 1.5rem; display: flex; align-items: center; gap: 2.5rem;">
@@ -204,30 +204,30 @@ export function mode5_render(container, currentKey = 'C') {
                     return frets.length <= 1 || Math.max(...frets) - Math.min(...frets) <= 4;
                 })
                 .forEach(combo => {
-                    // 클러스터의 기준: 근음(1도)이 있는 프렛 위치
-                    const rootNote = combo.find(n => n.degree === formula[0]);
-                    const rootFret = rootNote ? rootNote.fret : Math.min(...combo.map(n => n.fret));
-                    allClusters.push({ rootFret, notes: combo });
+                    // 클러스터 기준: 저음(combo[0] = sortedStrings[0] = 가장 낮은 줄의 음) 위치
+                    const bassNote = combo[0];
+                    const bassKey = `${bassNote.strIdx}-${bassNote.fret}`;
+                    allClusters.push({ bassKey, bassFret: bassNote.fret, notes: combo });
                 });
         });
 
-        // 근음 프렛 위치 순서로 정렬 (넥 왼쪽 → 오른쪽)
-        allClusters.sort((a, b) => a.rootFret - b.rootFret);
+        // 저음 프렛 위치 순서로 정렬 (넥 왼쪽 → 오른쪽)
+        allClusters.sort((a, b) => a.bassFret - b.bassFret);
 
-        // 고유한 근음 프렛 위치마다 색 배정
+        // 저음의 줄+프렛 조합이 고유한 각 클러스터에 색 배정
         const clusterColors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
-        const rootFretToColor = new Map();
+        const bassKeyToColor = new Map();
         let colorCount = 0;
         allClusters.forEach(cluster => {
-            if (!rootFretToColor.has(cluster.rootFret)) {
-                rootFretToColor.set(cluster.rootFret, clusterColors[colorCount++ % clusterColors.length]);
+            if (!bassKeyToColor.has(cluster.bassKey)) {
+                bassKeyToColor.set(cluster.bassKey, clusterColors[colorCount++ % clusterColors.length]);
             }
         });
 
-        // 각 셀에 색 적용 (같은 셀이 여러 클러스터에 겹치면 근음이 가장 가까운 클러스터 색으로)
+        // 각 셀에 색 적용 (같은 줄+프렛이 겹치면 저음 기준 첫 클러스터 색으로)
         const paintedCells = new Set();
         allClusters.forEach(cluster => {
-            const color = rootFretToColor.get(cluster.rootFret);
+            const color = bassKeyToColor.get(cluster.bassKey);
             cluster.notes.forEach(({ cell, degree, strIdx, fret }) => {
                 const key = `${strIdx}-${fret}`;
                 if (paintedCells.has(key)) return;
