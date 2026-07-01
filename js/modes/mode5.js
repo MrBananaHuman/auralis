@@ -164,10 +164,11 @@ export function mode5_render(container, currentKey = 'C') {
             voicings.forEach(voicingMode => {
                 let targetDegrees = [];
                 if (voicingCount === 4) {
-                    if (voicingMode === 'root') targetDegrees = [searchFormula[0], searchFormula[2], searchFormula[3], searchFormula[1]];
-                    else if (voicingMode === '1st') targetDegrees = [searchFormula[1], searchFormula[3], searchFormula[0], searchFormula[2]];
-                    else if (voicingMode === '2nd') targetDegrees = [searchFormula[2], searchFormula[0], searchFormula[1], searchFormula[3]];
-                    else if (voicingMode === '3rd') targetDegrees = [searchFormula[3], searchFormula[1], searchFormula[2], searchFormula[0]];
+                    // 저음 → 고음 순서: 클로즈 포지션 (1→3→5→7 순서로 줄 배치)
+                    if (voicingMode === 'root') targetDegrees = [searchFormula[0], searchFormula[1], searchFormula[2], searchFormula[3]]; // 1-3-5-7
+                    else if (voicingMode === '1st') targetDegrees = [searchFormula[1], searchFormula[2], searchFormula[3], searchFormula[0]]; // 3-5-7-1
+                    else if (voicingMode === '2nd') targetDegrees = [searchFormula[2], searchFormula[3], searchFormula[0], searchFormula[1]]; // 5-7-1-3
+                    else if (voicingMode === '3rd') targetDegrees = [searchFormula[3], searchFormula[0], searchFormula[1], searchFormula[2]]; // 7-1-3-5
                 } else {
                     if (voicingMode === 'root') targetDegrees = [searchFormula[0], searchFormula[1], searchFormula[2]];
                     else if (voicingMode === '1st') targetDegrees = [searchFormula[1], searchFormula[2], searchFormula[0]];
@@ -204,7 +205,7 @@ export function mode5_render(container, currentKey = 'C') {
                 combinations
                     .filter(combo => {
                         const frets = combo.map(c => c.fret).filter(f => f > 0);
-                        return frets.length <= 1 || Math.max(...frets) - Math.min(...frets) <= 4;
+                        return frets.length <= 1 || Math.max(...frets) - Math.min(...frets) <= 5;
                     })
                     .forEach(combo => {
                         // 클러스터 기준: 근음(1도)의 줄+프렛 위치
