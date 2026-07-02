@@ -26,13 +26,13 @@ export function mode5_render(container, currentKey = 'C') {
 
             <!-- Diatonic Quick Selector (Dynamic based on Global Key) -->
             <div class="diatonic-selector card glass" style="margin-bottom: 2rem; padding: 1rem; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 0.75rem;">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
                     <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
                         Diatonic Quick Select (<span id="explorer-key-display"></span>)
                     </label>
-                    <div id="diatonic-mode-toggle" style="display: flex; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; overflow: hidden; font-size: 0.7rem; font-weight: 700;">
-                        <button id="toggle-triads" style="padding: 0.25rem 0.6rem; background: var(--primary); color: #fff; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">Triads</button>
-                        <button id="toggle-7ths"   style="padding: 0.25rem 0.6rem; background: transparent; color: var(--text-muted); border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">7ths</button>
+                    <div id="diatonic-mode-toggle" style="display: flex; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; overflow: hidden; font-size: 0.75rem; font-weight: 700;">
+                        <button id="toggle-triads" style="padding: 0.35rem 1rem; background: transparent; color: rgba(255,255,255,0.4); border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s;">Triads</button>
+                        <button id="toggle-7ths"   style="padding: 0.35rem 1rem; background: transparent; color: rgba(255,255,255,0.4); border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s;">7ths</button>
                     </div>
                 </div>
                 <div id="explorer-diatonic-btns" class="compact-grid" style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
@@ -485,9 +485,9 @@ export function mode5_render(container, currentKey = 'C') {
 
     const updateToggleStyle = () => {
         toggleTriadsBtn.style.background = showSeventh ? 'transparent' : 'var(--primary)';
-        toggleTriadsBtn.style.color      = showSeventh ? 'var(--text-muted)' : '#fff';
+        toggleTriadsBtn.style.color      = showSeventh ? 'rgba(255,255,255,0.4)' : '#fff';
         toggle7thsBtn.style.background   = showSeventh ? 'var(--primary)' : 'transparent';
-        toggle7thsBtn.style.color        = showSeventh ? '#fff' : 'var(--text-muted)';
+        toggle7thsBtn.style.color        = showSeventh ? '#fff' : 'rgba(255,255,255,0.4)';
     };
 
     toggleTriadsBtn.addEventListener('click', () => {
