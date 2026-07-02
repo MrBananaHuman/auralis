@@ -62,6 +62,17 @@ export const MAJOR_DIATONIC_CHORDS = [
     { degree: 7, type: 'Diminished', suffix: 'dim' }
 ];
 
+// Diatonic 7th chords for a Major Key: Imaj7, IIm7, IIIm7, IVmaj7, V7, VIm7, VIIø
+export const MAJOR_DIATONIC_7TH_CHORDS = [
+    { degree: 1, type: 'Maj7',     suffix: 'maj7' },
+    { degree: 2, type: 'Min7',     suffix: 'm7'   },
+    { degree: 3, type: 'Min7',     suffix: 'm7'   },
+    { degree: 4, type: 'Maj7',     suffix: 'maj7' },
+    { degree: 5, type: 'Dom7',     suffix: '7'    },
+    { degree: 6, type: 'Min7',     suffix: 'm7'   },
+    { degree: 7, type: 'HalfDim7', suffix: 'm7b5' }
+];
+
 export const ADVANCED_CHORDS_POOL = [
     { degree: 1, type: 'Maj7', suffix: 'maj7' },
     { degree: 2, type: 'Min7', suffix: 'm7' },

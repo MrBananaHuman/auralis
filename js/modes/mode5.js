@@ -1,14 +1,15 @@
 // js/modes/mode5.js
 import { stopAll, playChord } from '../audioEngine.js';
-import { getChordNotes, NOTES, getChordFormula, MAJOR_DIATONIC_CHORDS, getScale } from '../musicTheory.js';
+import { getChordNotes, NOTES, getChordFormula, MAJOR_DIATONIC_CHORDS, MAJOR_DIATONIC_7TH_CHORDS, getScale } from '../musicTheory.js';
 import { initFretboard, highlightNotesOnFretboard, clearFretboard } from '../fretboard.js';
 
 export function mode5_render(container, currentKey = 'C') {
     let currentRoot = 'C';
     let currentType = 'Major';
     let currentStringSet = [0, 1, 2, 3]; // Default to 4 strings: 1, 2, 3, 4
+    let showSeventh = false;
 
-    const chordTypes = ['Major', 'Minor', 'Diminished', 'Augmented'];
+    const chordTypes = ['Major', 'Minor', 'Diminished', 'Augmented', 'Maj7', 'Min7', 'Dom7', 'HalfDim7'];
     const chordTypeTo7th = {
         'Major': 'Maj7',
         'Minor': 'Min7',
@@ -25,9 +26,15 @@ export function mode5_render(container, currentKey = 'C') {
 
             <!-- Diatonic Quick Selector (Dynamic based on Global Key) -->
             <div class="diatonic-selector card glass" style="margin-bottom: 2rem; padding: 1rem; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                <label style="display: block; margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
-                    Diatonic Quick Select (<span id="explorer-key-display"></span>)
-                </label>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 0.75rem;">
+                    <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
+                        Diatonic Quick Select (<span id="explorer-key-display"></span>)
+                    </label>
+                    <div id="diatonic-mode-toggle" style="display: flex; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; overflow: hidden; font-size: 0.7rem; font-weight: 700;">
+                        <button id="toggle-triads" style="padding: 0.25rem 0.6rem; background: var(--primary); color: #fff; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">Triads</button>
+                        <button id="toggle-7ths"   style="padding: 0.25rem 0.6rem; background: transparent; color: var(--text-muted); border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">7ths</button>
+                    </div>
+                </div>
                 <div id="explorer-diatonic-btns" class="compact-grid" style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
                     <!-- Buttons dynamically populated here -->
                 </div>
@@ -304,23 +311,26 @@ export function mode5_render(container, currentKey = 'C') {
         diatonicContainer.innerHTML = '';
 
         const scaleNotes = getScale(currentKey);
+        const pool = showSeventh ? MAJOR_DIATONIC_7TH_CHORDS : MAJOR_DIATONIC_CHORDS;
+        const romanTriads  = ['I',    'ii',   'iii',   'IV',    'V',   'vi',   'vii°'];
+        const romanSevenths = ['Imaj7','IIm7', 'IIIm7', 'IVmaj7','V7', 'VIm7', 'VIIø'];
 
-        MAJOR_DIATONIC_CHORDS.forEach((info, idx) => {
+        pool.forEach((info, idx) => {
             const rootName = scaleNotes[idx].match(/^[A-Ga-g][b#]?/)[0];
             const btn = document.createElement('button');
             btn.className = 'mini-btn degree-btn';
             btn.style.padding = '0.5rem 1rem';
             btn.style.height = 'auto';
             btn.style.lineHeight = '1.3';
-            
-            // Highlight active diatonic chord matching selected root and type
+
             if (rootName === currentRoot && info.type === currentType) {
                 btn.classList.add('active');
             }
 
+            const roman = showSeventh ? romanSevenths[idx] : romanTriads[idx];
             btn.innerHTML = `
                 <span style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase; font-weight: 700;">
-                    ${['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'][idx]}
+                    ${roman}
                 </span><br>
                 <strong style="font-size: 0.9rem;">${rootName}${info.suffix}</strong>
             `;
@@ -329,11 +339,9 @@ export function mode5_render(container, currentKey = 'C') {
                 currentRoot = rootName;
                 currentType = info.type;
 
-                // Sync dropdown select values
                 rootSelect.value = currentRoot;
                 typeSelect.value = currentType;
 
-                // Update active states
                 diatonicContainer.querySelectorAll('button').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
 
@@ -347,14 +355,15 @@ export function mode5_render(container, currentKey = 'C') {
     // Sync Active Diatonic Button after root or type changes via dropdown
     const syncActiveDiatonicButton = () => {
         if (!diatonicContainer) return;
+        const pool = showSeventh ? MAJOR_DIATONIC_7TH_CHORDS : MAJOR_DIATONIC_CHORDS;
         diatonicContainer.querySelectorAll('button').forEach(btn => {
             btn.classList.remove('active');
-            
+
             const scaleNotes = getScale(currentKey);
             const idx = Array.from(diatonicContainer.children).indexOf(btn);
             if (idx !== -1) {
                 const rootName = scaleNotes[idx].match(/^[A-Ga-g][b#]?/)[0];
-                const info = MAJOR_DIATONIC_CHORDS[idx];
+                const info = pool[idx];
                 if (rootName === currentRoot && info.type === currentType) {
                     btn.classList.add('active');
                 }
@@ -468,6 +477,47 @@ export function mode5_render(container, currentKey = 'C') {
         const type7th = chordTypeTo7th[currentType] || currentType;
         const notes = getChordNotes(currentRoot, type7th, 4);
         playChord(notes, '1n');
+    });
+
+    // Diatonic mode toggle (Triads / 7ths)
+    const toggleTriadsBtn = container.querySelector('#toggle-triads');
+    const toggle7thsBtn   = container.querySelector('#toggle-7ths');
+
+    const updateToggleStyle = () => {
+        toggleTriadsBtn.style.background = showSeventh ? 'transparent' : 'var(--primary)';
+        toggleTriadsBtn.style.color      = showSeventh ? 'var(--text-muted)' : '#fff';
+        toggle7thsBtn.style.background   = showSeventh ? 'var(--primary)' : 'transparent';
+        toggle7thsBtn.style.color        = showSeventh ? '#fff' : 'var(--text-muted)';
+    };
+
+    toggleTriadsBtn.addEventListener('click', () => {
+        if (showSeventh) {
+            showSeventh = false;
+            updateToggleStyle();
+            // revert to triad equivalent of current 7th type if needed
+            const triadFallback = { 'Maj7': 'Major', 'Min7': 'Minor', 'Dom7': 'Major', 'HalfDim7': 'Diminished' };
+            if (triadFallback[currentType]) {
+                currentType = triadFallback[currentType];
+                typeSelect.value = currentType;
+            }
+            renderDiatonicButtons();
+            updateVisualization();
+        }
+    });
+
+    toggle7thsBtn.addEventListener('click', () => {
+        if (!showSeventh) {
+            showSeventh = true;
+            updateToggleStyle();
+            // upgrade triad type to 7th equivalent
+            const seventhUpgrade = { 'Major': 'Maj7', 'Minor': 'Min7', 'Diminished': 'HalfDim7', 'Augmented': 'Maj7' };
+            if (seventhUpgrade[currentType]) {
+                currentType = seventhUpgrade[currentType];
+                typeSelect.value = currentType;
+            }
+            renderDiatonicButtons();
+            updateVisualization();
+        }
     });
 
     // Initial render
