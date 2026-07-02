@@ -5,9 +5,9 @@ import { initFretboard, highlightNotesOnFretboard, clearFretboard } from '../fre
 
 export function mode5_render(container, currentKey = 'C') {
     let currentRoot = 'C';
-    let currentType = 'Major';
+    let currentType = 'Maj7';
     let currentStringSet = [0, 1, 2, 3]; // Default to 4 strings: 1, 2, 3, 4
-    let showSeventh = false;
+    let showSeventh = true;
 
     const chordTypes = ['Major', 'Minor', 'Diminished', 'Augmented', 'Maj7', 'Min7', 'Dom7', 'HalfDim7'];
     const chordTypeTo7th = {
@@ -521,6 +521,7 @@ export function mode5_render(container, currentKey = 'C') {
     });
 
     // Initial render
+    updateToggleStyle();
     renderDiatonicButtons();
     updateVisualization();
 }
