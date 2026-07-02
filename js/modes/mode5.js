@@ -64,7 +64,7 @@ export function mode5_render(container, currentKey = 'C') {
                     <!-- Legend for Scale Degrees -->
                     <div class="voicing-legend" style="display: flex; justify-content: center; gap: 1.25rem; margin-top: 1.5rem; flex-wrap: wrap; font-size: 0.75rem; font-weight: 600;">
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #3730a3; box-shadow: 0 0 5px #3730a3;"></span>
+                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 5px #f59e0b;"></span>
                             <span style="color: var(--text-muted);">1 (Root)</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
@@ -137,16 +137,16 @@ export function mode5_render(container, currentKey = 'C') {
     // Setup Fretboard
     initFretboard('fretboard-container');
 
-    // 1 → 3 → 5 → 7 : 같은 인디고 계열, 어두운 → 밝은 순
+    // 1=골드(강조), 3→5→7=인디고 계열 어둡→밝
     const degreeColors = {
-        '1':  '#3730a3',  // 가장 어두운 인디고 - Root
+        '1':  '#f59e0b',  // 골드 - Root (강조)
         '3':  '#6366f1',  // 인디고
         'b3': '#6366f1',
         '5':  '#a5b4fc',  // 밝은 인디고
         'b5': '#a5b4fc',
         '#5': '#a5b4fc',
-        '7':  '#e0e7ff',  // 가장 밝은 라벤더 - 7th
-        'b7': '#e0e7ff',
+        '7':  '#c7d2fe',  // 라벤더
+        'b7': '#c7d2fe',
     };
 
     // Highlight every chord tone on the fretboard, colored by scale degree
