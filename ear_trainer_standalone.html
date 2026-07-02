@@ -3290,27 +3290,23 @@ function mode5_render(container, currentKey = 'C') {
                         </div>
                     </div>
 
-                    <!-- Legend for Voicing Inversion Shapes -->
+                    <!-- Legend for Scale Degrees -->
                     <div class="voicing-legend" style="display: flex; justify-content: center; gap: 1.25rem; margin-top: 1.5rem; flex-wrap: wrap; font-size: 0.75rem; font-weight: 600;">
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
                             <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #6366f1; box-shadow: 0 0 5px #6366f1;"></span>
-                            <span style="color: var(--text-muted);">Root Position</span>
+                            <span style="color: var(--text-muted);">1 (Root)</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
                             <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #10b981; box-shadow: 0 0 5px #10b981;"></span>
-                            <span style="color: var(--text-muted);">1st Inversion</span>
+                            <span style="color: var(--text-muted);">3 (Third)</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
                             <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 5px #f59e0b;"></span>
-                            <span style="color: var(--text-muted);">2nd Inversion</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.4rem;" id="legend-3rd-item">
-                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #ec4899; box-shadow: 0 0 5px #ec4899;"></span>
-                            <span style="color: var(--text-muted);">3rd Inversion</span>
+                            <span style="color: var(--text-muted);">5 (Fifth)</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #06b6d4; box-shadow: 0 0 5px #06b6d4;"></span>
-                            <span style="color: var(--text-muted);">Shared (Multi-shape)</span>
+                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #ec4899; box-shadow: 0 0 5px #ec4899;"></span>
+                            <span style="color: var(--text-muted);">7 (Seventh)</span>
                         </div>
                     </div>
 
@@ -3373,12 +3369,6 @@ function mode5_render(container, currentKey = 'C') {
     // Helper: Highlights clustered inversion shapes in different colors rather than drawing all notes uniformly
     const highlightAllVoicingShapesOnFretboard = (notes, formula, stringSet) => {
         clearFretboard();
-
-        // Dynamically toggle 3rd inversion legend item depending on 3-string vs 4-string mode
-        const legend3rd = container.querySelector('#legend-3rd-item');
-        if (legend3rd) {
-            legend3rd.style.display = stringSet.length === 4 ? 'flex' : 'none';
-        }
 
         // 1. If string set is not exactly 3 or 4 strings, show all notes in default color
         if (stringSet.length !== 3 && stringSet.length !== 4) {
@@ -3500,31 +3490,25 @@ function mode5_render(container, currentKey = 'C') {
                     marker.classList.add('active');
 
                     // Style colors corresponding to the legend
-                    const voicingColors = {
-                        'root': '#6366f1',  // Indigo
-                        '1st': '#10b981',   // Emerald
-                        '2nd': '#f59e0b',   // Amber
-                        '3rd': '#ec4899',   // Pink
-                        'multi': '#06b6d4',  // Cyan (Shared by multiple inversion shapes)
-                        'none': 'rgba(255, 255, 255, 0.15)' // Notes that don't form a compact shape
+                    const degreeColors = {
+                        '1':  '#6366f1',  // Indigo  - Root
+                        '3':  '#10b981',  // Emerald - Major 3rd
+                        'b3': '#10b981',  // Emerald - Minor 3rd
+                        '5':  '#f59e0b',  // Amber   - Perfect 5th
+                        'b5': '#f59e0b',  // Amber   - Diminished 5th
+                        '#5': '#f59e0b',  // Amber   - Augmented 5th
+                        '7':  '#ec4899',  // Pink    - Major 7th
+                        'b7': '#ec4899',  // Pink    - Minor 7th
                     };
 
-                    let finalColor = voicingColors.none;
-                    let shadowGlow = 'rgba(255, 255, 255, 0.1)';
-
-                    if (cellVoicingMap[key]) {
-                        const vList = Array.from(cellVoicingMap[key].voicings);
-                        if (vList.length > 1) {
-                            finalColor = voicingColors.multi;
-                            shadowGlow = voicingColors.multi;
-                        } else if (vList.length === 1) {
-                            finalColor = voicingColors[vList[0]];
-                            shadowGlow = voicingColors[vList[0]];
-                        }
-                    }
+                    const inShape = !!cellVoicingMap[key];
+                    const finalColor = inShape
+                        ? (degreeColors[deg] || 'rgba(255,255,255,0.3)')
+                        : 'rgba(255, 255, 255, 0.08)';
+                    const shadowGlow = inShape ? finalColor : 'transparent';
 
                     marker.style.background = finalColor;
-                    marker.style.boxShadow = `0 0 10px ${shadowGlow}`;
+                    marker.style.boxShadow = inShape ? `0 0 10px ${shadowGlow}` : 'none';
                     marker.style.borderColor = 'rgba(255, 255, 255, 0.4)';
                     marker.style.borderWidth = '1px';
                     marker.style.borderStyle = 'solid';
