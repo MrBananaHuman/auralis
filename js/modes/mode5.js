@@ -1,13 +1,13 @@
 // js/modes/mode5.js
 import { stopAll, playChord } from '../audioEngine.js';
-import { getChordNotes, NOTES, getChordFormula, MAJOR_DIATONIC_CHORDS, MAJOR_DIATONIC_7TH_CHORDS, getScale } from '../musicTheory.js';
+import { getChordNotes, NOTES, getChordFormula, MAJOR_DIATONIC_7TH_CHORDS, getScale } from '../musicTheory.js';
 import { initFretboard, clearFretboard } from '../fretboard.js';
 
 export function mode5_render(container, currentKey = 'C') {
     let currentRoot = 'C';
     let currentType = 'Maj7';
     let currentStringSet = [0, 1, 2, 3]; // Default to 4 strings: 1, 2, 3, 4
-    let showSeventh = true;
+    let goldDegree = '1'; // 골드 강조 대상: '1'(root) 또는 '5'
 
     const chordTypes = ['Major', 'Minor', 'Diminished', 'Augmented', 'Maj7', 'Min7', 'Dom7', 'HalfDim7'];
     const chordTypeTo7th = {
@@ -30,9 +30,12 @@ export function mode5_render(container, currentKey = 'C') {
                     <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">
                         Diatonic Quick Select (<span id="explorer-key-display"></span>)
                     </label>
-                    <div id="diatonic-mode-toggle" style="display: flex; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; overflow: hidden; font-size: 0.75rem; font-weight: 700;">
-                        <button id="toggle-triads" style="padding: 0.35rem 1rem; background: transparent; color: rgba(255,255,255,0.4); border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s;">Triads</button>
-                        <button id="toggle-7ths"   style="padding: 0.35rem 1rem; background: transparent; color: rgba(255,255,255,0.4); border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s;">7ths</button>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: var(--text-muted); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Gold</span>
+                        <div id="gold-degree-toggle" style="display: flex; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; overflow: hidden; font-size: 0.75rem; font-weight: 700;">
+                            <button id="toggle-gold-root" style="padding: 0.35rem 1rem; background: transparent; color: rgba(255,255,255,0.4); border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s;">Root</button>
+                            <button id="toggle-gold-5th"  style="padding: 0.35rem 1rem; background: transparent; color: rgba(255,255,255,0.4); border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.15s;">5th</button>
+                        </div>
                     </div>
                 </div>
                 <div id="explorer-diatonic-btns" class="compact-grid" style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
@@ -64,7 +67,7 @@ export function mode5_render(container, currentKey = 'C') {
                     <!-- Legend for Scale Degrees -->
                     <div class="voicing-legend" style="display: flex; justify-content: center; gap: 1.25rem; margin-top: 1.5rem; flex-wrap: wrap; font-size: 0.75rem; font-weight: 600;">
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 5px #f59e0b;"></span>
+                            <span id="legend-dot-1" style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 5px #f59e0b;"></span>
                             <span style="color: var(--text-muted);">1 (Root)</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
@@ -72,7 +75,7 @@ export function mode5_render(container, currentKey = 'C') {
                             <span style="color: var(--text-muted);">3 (Third)</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #a5b4fc; box-shadow: 0 0 5px #a5b4fc;"></span>
+                            <span id="legend-dot-5" style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #a5b4fc; box-shadow: 0 0 5px #a5b4fc;"></span>
                             <span style="color: var(--text-muted);">5 (Fifth)</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
@@ -137,21 +140,30 @@ export function mode5_render(container, currentKey = 'C') {
     // Setup Fretboard
     initFretboard('fretboard-container');
 
-    // 1=골드(강조), 3→5→7=인디고 계열 어둡→밝
-    const degreeColors = {
-        '1':  '#f59e0b',  // 골드 - Root (강조)
-        '3':  '#6366f1',  // 인디고
-        'b3': '#6366f1',
-        '5':  '#a5b4fc',  // 밝은 인디고
-        'b5': '#a5b4fc',
-        '#5': '#a5b4fc',
-        '7':  '#c7d2fe',  // 라벤더
-        'b7': '#c7d2fe',
+    // goldDegree('1' 또는 '5')가 골드 강조, 나머지는 인디고 계열 어둡→밝
+    const getDegreeColors = () => {
+        const colors = {
+            '1':  '#3730a3',  // 어두운 인디고
+            '3':  '#6366f1',  // 인디고
+            'b3': '#6366f1',
+            '5':  '#a5b4fc',  // 밝은 인디고
+            'b5': '#a5b4fc',
+            '#5': '#a5b4fc',
+            '7':  '#c7d2fe',  // 라벤더
+            'b7': '#c7d2fe',
+        };
+        if (goldDegree === '5') {
+            colors['5'] = colors['b5'] = colors['#5'] = '#f59e0b';
+        } else {
+            colors['1'] = '#f59e0b';
+        }
+        return colors;
     };
 
     // Highlight every chord tone on the fretboard, colored by scale degree
     const highlightAllVoicingShapesOnFretboard = (notes, formula, stringSet) => {
         clearFretboard();
+        const degreeColors = getDegreeColors();
 
         notes.forEach((fullNote, idx) => {
             const noteName = fullNote.match(/^[A-Ga-g][b#]?/)[0];
@@ -186,8 +198,7 @@ export function mode5_render(container, currentKey = 'C') {
         diatonicContainer.innerHTML = '';
 
         const scaleNotes = getScale(currentKey);
-        const pool = showSeventh ? MAJOR_DIATONIC_7TH_CHORDS : MAJOR_DIATONIC_CHORDS;
-        const romanTriads  = ['I',    'ii',   'iii',   'IV',    'V',   'vi',   'vii°'];
+        const pool = MAJOR_DIATONIC_7TH_CHORDS;
         const romanSevenths = ['Imaj7','IIm7', 'IIIm7', 'IVmaj7','V7', 'VIm7', 'VIIø'];
 
         pool.forEach((info, idx) => {
@@ -202,7 +213,7 @@ export function mode5_render(container, currentKey = 'C') {
                 btn.classList.add('active');
             }
 
-            const roman = showSeventh ? romanSevenths[idx] : romanTriads[idx];
+            const roman = romanSevenths[idx];
             btn.innerHTML = `
                 <span style="font-size: 0.65rem; opacity: 0.6; text-transform: uppercase; font-weight: 700;">
                     ${roman}
@@ -230,7 +241,7 @@ export function mode5_render(container, currentKey = 'C') {
     // Sync Active Diatonic Button after root or type changes via dropdown
     const syncActiveDiatonicButton = () => {
         if (!diatonicContainer) return;
-        const pool = showSeventh ? MAJOR_DIATONIC_7TH_CHORDS : MAJOR_DIATONIC_CHORDS;
+        const pool = MAJOR_DIATONIC_7TH_CHORDS;
         diatonicContainer.querySelectorAll('button').forEach(btn => {
             btn.classList.remove('active');
 
@@ -354,43 +365,43 @@ export function mode5_render(container, currentKey = 'C') {
         playChord(notes, '1n');
     });
 
-    // Diatonic mode toggle (Triads / 7ths)
-    const toggleTriadsBtn = container.querySelector('#toggle-triads');
-    const toggle7thsBtn   = container.querySelector('#toggle-7ths');
+    // Gold highlight toggle (Root / 5th)
+    const toggleGoldRootBtn = container.querySelector('#toggle-gold-root');
+    const toggleGold5thBtn  = container.querySelector('#toggle-gold-5th');
 
     const updateToggleStyle = () => {
-        toggleTriadsBtn.style.background = showSeventh ? 'transparent' : 'var(--primary)';
-        toggleTriadsBtn.style.color      = showSeventh ? 'rgba(255,255,255,0.4)' : '#fff';
-        toggle7thsBtn.style.background   = showSeventh ? 'var(--primary)' : 'transparent';
-        toggle7thsBtn.style.color        = showSeventh ? '#fff' : 'rgba(255,255,255,0.4)';
+        const goldOnRoot = goldDegree === '1';
+        toggleGoldRootBtn.style.background = goldOnRoot ? 'var(--primary)' : 'transparent';
+        toggleGoldRootBtn.style.color      = goldOnRoot ? '#fff' : 'rgba(255,255,255,0.4)';
+        toggleGold5thBtn.style.background  = goldOnRoot ? 'transparent' : 'var(--primary)';
+        toggleGold5thBtn.style.color       = goldOnRoot ? 'rgba(255,255,255,0.4)' : '#fff';
+
+        // 레전드 점 색도 골드 대상에 맞춰 동기화
+        const colors = getDegreeColors();
+        const dot1 = container.querySelector('#legend-dot-1');
+        const dot5 = container.querySelector('#legend-dot-5');
+        if (dot1) {
+            dot1.style.background = colors['1'];
+            dot1.style.boxShadow = `0 0 5px ${colors['1']}`;
+        }
+        if (dot5) {
+            dot5.style.background = colors['5'];
+            dot5.style.boxShadow = `0 0 5px ${colors['5']}`;
+        }
     };
 
-    toggleTriadsBtn.addEventListener('click', () => {
-        if (showSeventh) {
-            showSeventh = false;
+    toggleGoldRootBtn.addEventListener('click', () => {
+        if (goldDegree !== '1') {
+            goldDegree = '1';
             updateToggleStyle();
-            // revert to triad equivalent of current 7th type if needed
-            const triadFallback = { 'Maj7': 'Major', 'Min7': 'Minor', 'Dom7': 'Major', 'HalfDim7': 'Diminished' };
-            if (triadFallback[currentType]) {
-                currentType = triadFallback[currentType];
-                typeSelect.value = currentType;
-            }
-            renderDiatonicButtons();
             updateVisualization();
         }
     });
 
-    toggle7thsBtn.addEventListener('click', () => {
-        if (!showSeventh) {
-            showSeventh = true;
+    toggleGold5thBtn.addEventListener('click', () => {
+        if (goldDegree !== '5') {
+            goldDegree = '5';
             updateToggleStyle();
-            // upgrade triad type to 7th equivalent
-            const seventhUpgrade = { 'Major': 'Maj7', 'Minor': 'Min7', 'Diminished': 'HalfDim7', 'Augmented': 'Maj7' };
-            if (seventhUpgrade[currentType]) {
-                currentType = seventhUpgrade[currentType];
-                typeSelect.value = currentType;
-            }
-            renderDiatonicButtons();
             updateVisualization();
         }
     });
