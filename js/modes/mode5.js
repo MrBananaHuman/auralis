@@ -1,10 +1,11 @@
 // js/modes/mode5.js
 import { stopAll, playChord } from '../audioEngine.js';
 import { getChordNotes, NOTES, getChordFormula, MAJOR_DIATONIC_7TH_CHORDS, getScale } from '../musicTheory.js';
-import { initFretboard, clearFretboard } from '../fretboard.js';
+import { initFretboard } from '../fretboard.js';
 
 export function mode5_render(container, currentKey = 'C') {
-    let currentRoot = 'C';
+    const keyRoot = getScale(currentKey)[0].match(/^[A-Ga-g][b#]?/)[0];
+    let currentRoot = keyRoot;
     let currentType = 'Maj7';
     let currentStringSet = [0, 1, 2, 3]; // Default to 4 strings: 1, 2, 3, 4
     let goldDegree = '1'; // 골드 강조 대상: '1'(root) 또는 '5'
@@ -16,6 +17,13 @@ export function mode5_render(container, currentKey = 'C') {
         'Diminished': 'Dim7',
         'Augmented': 'Aug7'
     };
+    const typeSuffix = {
+        'Major': '', 'Minor': 'm', 'Diminished': 'dim', 'Augmented': 'aug',
+        'Maj7': 'maj7', 'Min7': 'm7', 'Dom7': '7', 'HalfDim7': 'm7b5'
+    };
+
+    // 선택된 코드 진행 (클릭 순서 유지). 각 항목: { root, type, roman }
+    let progression = [{ root: keyRoot, type: 'Maj7', roman: 'Imaj7' }];
 
     const html = `
         <div class="glass-panel chord-explorer">
@@ -41,6 +49,9 @@ export function mode5_render(container, currentKey = 'C') {
                 <div id="explorer-diatonic-btns" class="compact-grid" style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
                     <!-- Buttons dynamically populated here -->
                 </div>
+                <p style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.7rem;">
+                    코드를 여러 개 클릭하면 진행(progression)으로 아래에 쌓입니다. 다시 클릭하면 제거돼요.
+                </p>
             </div>
 
             <div class="explorer-layout">
@@ -126,6 +137,9 @@ export function mode5_render(container, currentKey = 'C') {
                     </div>
                 </div>
             </div>
+
+            <!-- 코드 진행별 프렛보드 스택 (스크롤) -->
+            <div id="explorer-boards" style="margin-top: 1.5rem;"></div>
         </div>
     `;
     container.innerHTML = html;
@@ -136,9 +150,7 @@ export function mode5_render(container, currentKey = 'C') {
     const playBtn = container.querySelector('#play-chord-btn');
     const diatonicContainer = container.querySelector('#explorer-diatonic-btns');
     const keyDisplay = container.querySelector('#explorer-key-display');
-
-    // Setup Fretboard
-    initFretboard('fretboard-container');
+    const boardsContainer = container.querySelector('#explorer-boards');
 
     // goldDegree('1' 또는 '5')가 골드 강조, 나머지는 인디고 계열 어둡→밝
     const getDegreeColors = () => {
@@ -160,9 +172,8 @@ export function mode5_render(container, currentKey = 'C') {
         return colors;
     };
 
-    // Highlight every chord tone on the fretboard, colored by scale degree
-    const highlightAllVoicingShapesOnFretboard = (notes, formula, stringSet) => {
-        clearFretboard();
+    // 특정 보드(boardEl) 안에서만 코드 톤을 도수 색깔로 하이라이트
+    const highlightChordOnBoard = (boardEl, notes, formula, stringSet) => {
         const degreeColors = getDegreeColors();
 
         notes.forEach((fullNote, idx) => {
@@ -170,7 +181,7 @@ export function mode5_render(container, currentKey = 'C') {
             const deg = formula[idx];
             const color = degreeColors[deg] || 'rgba(255,255,255,0.3)';
 
-            document.querySelectorAll(`.fret[data-note="${noteName}"]`).forEach(cell => {
+            boardEl.querySelectorAll(`.fret[data-note="${noteName}"]`).forEach(cell => {
                 const parentString = cell.closest('.string');
                 if (!parentString) return;
                 const strIdx = parseInt(parentString.className.match(/string-(\d+)/)[1]);
@@ -188,6 +199,51 @@ export function mode5_render(container, currentKey = 'C') {
                 marker.style.borderWidth = '1px';
                 marker.style.borderStyle = 'solid';
             });
+        });
+    };
+
+    // 진행의 각 코드마다 프렛보드 카드를 세로로 쌓아 렌더
+    const renderBoards = () => {
+        boardsContainer.innerHTML = '';
+
+        progression.forEach((chord, i) => {
+            const isFocused = chord.root === currentRoot && chord.type === currentType;
+            const label = `${chord.root}${typeSuffix[chord.type] ?? chord.type}`;
+
+            const card = document.createElement('div');
+            card.className = 'card glass';
+            card.style.cssText = `margin-bottom: 1.25rem; padding: 1rem; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid ${isFocused ? 'var(--primary)' : 'rgba(255,255,255,0.06)'};`;
+
+            const header = document.createElement('div');
+            header.style.cssText = 'display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.75rem; cursor: pointer;';
+            header.innerHTML = `
+                <span style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700;">${i + 1}</span>
+                ${chord.roman ? `<span style="color: var(--primary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">${chord.roman}</span>` : ''}
+                <strong style="font-size: 1rem;">${label}</strong>
+            `;
+            // 헤더 클릭 시 해당 코드로 포커스 (오선지/포뮬러 갱신)
+            header.addEventListener('click', () => {
+                currentRoot = chord.root;
+                currentType = chord.type;
+                rootSelect.value = currentRoot;
+                typeSelect.value = currentType;
+                updateVisualization();
+            });
+
+            const boardDiv = document.createElement('div');
+            const boardId = `explorer-board-${i}`;
+            boardDiv.id = boardId;
+
+            card.appendChild(header);
+            card.appendChild(boardDiv);
+            boardsContainer.appendChild(card);
+
+            initFretboard(boardId);
+
+            const type7th = chordTypeTo7th[chord.type] || chord.type;
+            const notes = getChordNotes(chord.root, type7th, 4);
+            const formula = getChordFormula(type7th);
+            highlightChordOnBoard(boardDiv, notes, formula, currentStringSet);
         });
     };
 
@@ -209,7 +265,7 @@ export function mode5_render(container, currentKey = 'C') {
             btn.style.height = 'auto';
             btn.style.lineHeight = '1.3';
 
-            if (rootName === currentRoot && info.type === currentType) {
+            if (progression.some(c => c.root === rootName && c.type === info.type)) {
                 btn.classList.add('active');
             }
 
@@ -221,15 +277,25 @@ export function mode5_render(container, currentKey = 'C') {
                 <strong style="font-size: 0.9rem;">${rootName}${info.suffix}</strong>
             `;
 
+            // 토글: 진행에 없으면 추가, 있으면 제거 (마지막 하나는 유지)
             btn.addEventListener('click', () => {
-                currentRoot = rootName;
-                currentType = info.type;
+                const idxInProg = progression.findIndex(c => c.root === rootName && c.type === info.type);
+
+                if (idxInProg !== -1) {
+                    if (progression.length > 1) {
+                        progression.splice(idxInProg, 1);
+                        const last = progression[progression.length - 1];
+                        currentRoot = last.root;
+                        currentType = last.type;
+                    }
+                } else {
+                    progression.push({ root: rootName, type: info.type, roman });
+                    currentRoot = rootName;
+                    currentType = info.type;
+                }
 
                 rootSelect.value = currentRoot;
                 typeSelect.value = currentType;
-
-                diatonicContainer.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
 
                 updateVisualization();
             });
@@ -238,21 +304,17 @@ export function mode5_render(container, currentKey = 'C') {
         });
     };
 
-    // Sync Active Diatonic Button after root or type changes via dropdown
+    // 진행에 포함된 코드들의 다이아토닉 버튼을 active로 동기화
     const syncActiveDiatonicButton = () => {
         if (!diatonicContainer) return;
         const pool = MAJOR_DIATONIC_7TH_CHORDS;
-        diatonicContainer.querySelectorAll('button').forEach(btn => {
+        const scaleNotes = getScale(currentKey);
+        diatonicContainer.querySelectorAll('button').forEach((btn, idx) => {
             btn.classList.remove('active');
-
-            const scaleNotes = getScale(currentKey);
-            const idx = Array.from(diatonicContainer.children).indexOf(btn);
-            if (idx !== -1) {
-                const rootName = scaleNotes[idx].match(/^[A-Ga-g][b#]?/)[0];
-                const info = pool[idx];
-                if (rootName === currentRoot && info.type === currentType) {
-                    btn.classList.add('active');
-                }
+            const rootName = scaleNotes[idx].match(/^[A-Ga-g][b#]?/)[0];
+            const info = pool[idx];
+            if (progression.some(c => c.root === rootName && c.type === info.type)) {
+                btn.classList.add('active');
             }
         });
     };
@@ -261,9 +323,9 @@ export function mode5_render(container, currentKey = 'C') {
         const type7th = chordTypeTo7th[currentType] || currentType;
         const notes = getChordNotes(currentRoot, type7th, 4); // Use 4th octave for staff
         const formula = getChordFormula(type7th);
-        
-        // Fretboard highlight color-coded by voicing shape
-        highlightAllVoicingShapesOnFretboard(notes, formula, currentStringSet);
+
+        // 진행 전체를 프렛보드 스택으로 렌더
+        renderBoards();
 
         // Update Formula UI
         const formulaContainer = container.querySelector('#chord-formula-container');
@@ -338,13 +400,16 @@ export function mode5_render(container, currentKey = 'C') {
         });
     }
 
+    // 드롭다운으로 직접 지정하면 진행을 그 코드 하나로 초기화
     rootSelect.addEventListener('change', (e) => {
         currentRoot = e.target.value;
+        progression = [{ root: currentRoot, type: currentType, roman: null }];
         updateVisualization();
     });
 
     typeSelect.addEventListener('change', (e) => {
         currentType = e.target.value;
+        progression = [{ root: currentRoot, type: currentType, roman: null }];
         updateVisualization();
     });
 

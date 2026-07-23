@@ -89,7 +89,7 @@ function initApp() {
             // Hide global fretboard for modes that render their own custom fretboards
             const globalFretboard = document.querySelector('main > #fretboard-container');
             if (globalFretboard) {
-                if (currentMode === 'mode7' || currentMode === 'mode8') {
+                if (currentMode === 'mode5' || currentMode === 'mode7' || currentMode === 'mode8') {
                     globalFretboard.style.display = 'none';
                 } else {
                     globalFretboard.style.display = 'block';

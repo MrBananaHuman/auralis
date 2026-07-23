@@ -3,6 +3,10 @@ import { initFretboard, onFretClick, clearFretboard, highlightRoot } from '../fr
 import { identifyChord, pickRandom, getNoteName, getChordNotes, getChordFormula } from '../musicTheory.js';
 import { playChord, stopAll } from '../audioEngine.js';
 
+// 모듈 레벨 재생 상태: 모드를 나갔다 돌아와도 진행 중인 재생을 제어할 수 있다
+let isPlaying = false;
+let isLooping = false;
+
 export function mode7_render(container, currentKey) {
     container.innerHTML = `
         <div class="mode-container builder-mode">
@@ -133,8 +137,6 @@ export function mode7_render(container, currentKey) {
     let playbackChord = null; 
     let isGuidanceActive = false;
     let progression = [];
-    let isPlaying = false;
-    let isLooping = false;
     let animationId;
 
     initFretboard('fretboard-container-mode7');
@@ -707,10 +709,14 @@ export function mode7_render(container, currentKey) {
 
     playAllBtn.addEventListener('click', async () => {
         if (isPlaying) {
+            // 이전 렌더에서 시작된 재생도 여기서 멈춘다 (isPlaying은 모듈 레벨)
             isPlaying = false;
+            playAllBtn.innerHTML = '<i data-lucide="play-circle"></i> <span>Play</span>';
+            lucide.createIcons({ root: playAllBtn });
+            playAllBtn.disabled = progression.length === 0;
             return;
         }
-        
+
         if (progression.length === 0) return;
         
         isPlaying = true;
@@ -793,6 +799,18 @@ export function mode7_render(container, currentKey) {
         playAllBtn.innerHTML = '<i data-lucide="play-circle"></i> Play';
         lucide.createIcons({ root: playAllBtn });
     });
+
+    // 다른 모드에 갔다 온 경우: 재생이 계속 중이면 Stop 버튼으로 동기화
+    if (isPlaying) {
+        playAllBtn.disabled = false;
+        playAllBtn.innerHTML = '<i data-lucide="square"></i> <span>Stop</span>';
+        lucide.createIcons({ root: playAllBtn });
+    }
+    if (isLooping) {
+        loopBtn.classList.add('active');
+        loopBtn.style.color = 'var(--secondary-glow)';
+        loopBtn.style.borderColor = 'var(--secondary-glow)';
+    }
 
     // Draw initial rhythm display
     setTimeout(drawRhythmNotation, 100);
