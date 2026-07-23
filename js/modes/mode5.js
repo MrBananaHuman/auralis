@@ -212,10 +212,10 @@ export function mode5_render(container, currentKey = 'C') {
 
             const card = document.createElement('div');
             card.className = 'card glass';
-            card.style.cssText = `margin-bottom: 1.25rem; padding: 1rem; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid ${isFocused ? 'var(--primary)' : 'rgba(255,255,255,0.06)'};`;
+            card.style.cssText = `margin-bottom: 0.75rem; padding: 0.6rem 0.75rem; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid ${isFocused ? 'var(--primary)' : 'rgba(255,255,255,0.06)'};`;
 
             const header = document.createElement('div');
-            header.style.cssText = 'display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.75rem; cursor: pointer;';
+            header.style.cssText = 'display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 0.4rem; cursor: pointer;';
             header.innerHTML = `
                 <span style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700;">${i + 1}</span>
                 ${chord.roman ? `<span style="color: var(--primary); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">${chord.roman}</span>` : ''}
@@ -233,6 +233,7 @@ export function mode5_render(container, currentKey = 'C') {
             const boardDiv = document.createElement('div');
             const boardId = `explorer-board-${i}`;
             boardDiv.id = boardId;
+            boardDiv.className = 'compact-fretboard';
 
             card.appendChild(header);
             card.appendChild(boardDiv);

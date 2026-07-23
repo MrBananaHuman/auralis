@@ -907,6 +907,31 @@ header p {
     border-right: none;
 }
 
+/* Compact fretboard: Chord Explorer 진행 카드용 (한 화면에 3개 목표) */
+.compact-fretboard .string,
+.compact-fretboard .string-row {
+    height: 24px;
+}
+
+.compact-fretboard .note-marker {
+    width: 15px;
+    height: 15px;
+    font-size: 0.55rem;
+}
+
+.compact-fretboard .inlay-dot {
+    width: 8px;
+    height: 8px;
+}
+
+.compact-fretboard .fret-markers-row {
+    height: 14px;
+}
+
+.compact-fretboard .fret-marker-label {
+    font-size: 0.65rem;
+}
+
 /* ==========================================================================
    MODE 7: HARMONY BUILDER STYLES
    ========================================================================== */
