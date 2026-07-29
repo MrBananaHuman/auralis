@@ -154,17 +154,18 @@ export function mode9_render(container, currentKey = 'C') {
 
     const chordLabel = (chord) => `${chord.root}${typeSuffix[chord.type] ?? chord.type}`;
 
-    // Drop 2/3 보이싱에 속하는 셀 계산: 줄 세트 × 전위 조합에서
-    // 프렛 스팬 4 이내(개방현 제외)로 잡을 수 있는 모양만 남긴다
-    const computeDropCells = (boardEl, noteNames, mode) => {
+    // Drop 2/3 보이싱 모양 계산: 줄 세트 × 전위 조합에서
+    // 프렛 스팬 4 이내(개방현 제외)로 잡을 수 있는 모양을 전위별로 수집
+    // 반환: [{ invIdx, bassFret, cells: [{cell, toneIdx, fret}] }]
+    const computeDropShapes = (boardEl, noteNames, mode) => {
         const sets = mode === 'drop2' ? DROP2_SETS : DROP3_SETS;
         const inversions = mode === 'drop2' ? DROP2_INVERSIONS : DROP3_INVERSIONS;
-        const memberCells = new Map(); // cell element -> tone index
+        const shapes = [];
 
         sets.forEach(strSet => {
             // 선택된 줄만으로 구성된 세트만 사용
             if (!strSet.every(s => currentStringSet.includes(s))) return;
-            inversions.forEach(order => {
+            inversions.forEach((order, invIdx) => {
                 const perString = strSet.map((strIdx, i) => {
                     const toneIdx = order[i];
                     const cells = boardEl.querySelectorAll(`.string-${strIdx} .fret[data-note="${noteNames[toneIdx]}"]`);
@@ -175,7 +176,11 @@ export function mode9_render(container, currentKey = 'C') {
                     if (i === perString.length) {
                         const frets = acc.map(c => c.fret).filter(f => f > 0);
                         const span = frets.length <= 1 ? 0 : Math.max(...frets) - Math.min(...frets);
-                        if (span <= 4) acc.forEach(c => memberCells.set(c.cell, c.toneIdx));
+                        if (span <= 4) {
+                            // pos: 운지 포지션 (개방현 제외 최저 프렛) — 전위 정렬 기준
+                            const pos = frets.length ? Math.min(...frets) : 0;
+                            shapes.push({ invIdx, pos, cells: [...acc] });
+                        }
                         return;
                     }
                     perString[i].forEach(c => { acc.push(c); walk(i + 1, acc); acc.pop(); });
@@ -184,7 +189,7 @@ export function mode9_render(container, currentKey = 'C') {
             });
         });
 
-        return memberCells;
+        return shapes;
     };
 
     const lightCell = (cell, label, color) => {
@@ -249,7 +254,12 @@ export function mode9_render(container, currentKey = 'C') {
             boardDiv.id = boardId;
             boardDiv.className = 'compact-fretboard';
 
+            // drop 모드에서 전위(inversion) 선택 칩이 들어갈 줄
+            const invRow = document.createElement('div');
+            invRow.style.cssText = 'display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.5rem;';
+
             card.appendChild(header);
+            if (effectiveMode !== 'all') card.appendChild(invRow);
             card.appendChild(boardDiv);
             boardsContainer.appendChild(card);
 
@@ -267,11 +277,40 @@ export function mode9_render(container, currentKey = 'C') {
                     });
                 });
             } else {
-                const members = computeDropCells(boardDiv, noteNames, effectiveMode);
-                members.forEach((toneIdx, cell) => {
-                    const color = TONE_COLORS[toneIdx] || TONE_COLORS[TONE_COLORS.length - 1];
-                    lightCell(cell, noteNames[toneIdx], color);
+                const shapes = computeDropShapes(boardDiv, noteNames, effectiveMode);
+                const invOrders = effectiveMode === 'drop2' ? DROP2_INVERSIONS : DROP3_INVERSIONS;
+
+                // 전위 버튼을 모양의 포지션이 낮은 순으로 정렬
+                const present = [...new Set(shapes.map(s => s.invIdx))];
+                const minPos = invIdx => Math.min(...shapes.filter(s => s.invIdx === invIdx).map(s => s.pos));
+                present.sort((a, b) => minPos(a) - minPos(b));
+
+                let sel = chord.invSel ?? 'all';
+                if (sel !== 'all' && !present.includes(sel)) sel = 'all';
+
+                const makeChip = (label, value) => {
+                    const chip = document.createElement('button');
+                    const active = sel === value;
+                    chip.textContent = label;
+                    chip.style.cssText = `padding: 0.25rem 0.7rem; border-radius: 6px; border: 1px solid ${active ? 'var(--primary)' : 'rgba(255,255,255,0.15)'}; background: ${active ? 'var(--primary)' : 'transparent'}; color: ${active ? '#fff' : 'var(--text-muted)'}; font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: all 0.15s;`;
+                    chip.addEventListener('click', () => {
+                        chord.invSel = value;
+                        updateVisualization();
+                    });
+                    return chip;
+                };
+
+                invRow.appendChild(makeChip('All', 'all'));
+                present.forEach(invIdx => {
+                    invRow.appendChild(makeChip(invOrders[invIdx].map(t => noteNames[t]).join('·'), invIdx));
                 });
+
+                shapes
+                    .filter(s => sel === 'all' || s.invIdx === sel)
+                    .forEach(s => s.cells.forEach(({ cell, toneIdx }) => {
+                        const color = TONE_COLORS[toneIdx] || TONE_COLORS[TONE_COLORS.length - 1];
+                        lightCell(cell, noteNames[toneIdx], color);
+                    }));
             }
         });
     };
