@@ -5064,6 +5064,7 @@ function mode9_render(container, currentKey = 'C') {
     let currentRoot = keyRoot;
     let currentType = 'Maj7';
     let voicingMode = 'all'; // 'all' | 'drop2' | 'drop3'
+    let currentStringSet = [0, 1, 2, 3, 4]; // 기본 1~5번줄 (6번줄 제외)
 
     // 하모니 빌더의 코드 + 7th 코드 전부
     const chordTypes = [
@@ -5151,6 +5152,16 @@ function mode9_render(container, currentKey = 'C') {
                     `).join('')}
                 </div>
 
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <span style="color: var(--text-muted); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Strings</span>
+                    ${[1, 2, 3, 4, 5, 6].map(s => `
+                        <div style="display: flex; align-items: center; gap: 0.3rem;">
+                            <input type="checkbox" id="voicing-string-${s}" class="string-checkbox voicing-string-checkbox" value="${s - 1}" ${currentStringSet.includes(s - 1) ? 'checked' : ''}>
+                            <label for="voicing-string-${s}" style="font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--text-main);">${s}</label>
+                        </div>
+                    `).join('')}
+                </div>
+
                 <button class="play-chord-premium" id="voicing-play-btn" style="width: 72px; height: 72px;">
                     <i data-lucide="play"></i>
                     <span style="font-size: 0.55rem; text-transform: uppercase; letter-spacing: 1px;">Play</span>
@@ -5203,6 +5214,8 @@ function mode9_render(container, currentKey = 'C') {
         const memberCells = new Map(); // cell element -> tone index
 
         sets.forEach(strSet => {
+            // 선택된 줄만으로 구성된 세트만 사용
+            if (!strSet.every(s => currentStringSet.includes(s))) return;
             inversions.forEach(order => {
                 const perString = strSet.map((strIdx, i) => {
                     const toneIdx = order[i];
@@ -5298,6 +5311,10 @@ function mode9_render(container, currentKey = 'C') {
                 noteNames.forEach((name, toneIdx) => {
                     const color = TONE_COLORS[toneIdx] || TONE_COLORS[TONE_COLORS.length - 1];
                     boardDiv.querySelectorAll(`.fret[data-note="${name}"]`).forEach(cell => {
+                        const parentString = cell.closest('.string');
+                        if (!parentString) return;
+                        const strIdx = parseInt(parentString.className.match(/string-(\d+)/)[1]);
+                        if (!currentStringSet.includes(strIdx)) return;
                         lightCell(cell, name, color);
                     });
                 });
@@ -5464,6 +5481,16 @@ function mode9_render(container, currentKey = 'C') {
                 voicingMode = btn.dataset.vmode;
                 updateVisualization();
             }
+        });
+    });
+
+    const stringCheckboxes = container.querySelectorAll('.voicing-string-checkbox');
+    stringCheckboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            currentStringSet = Array.from(stringCheckboxes)
+                .filter(c => c.checked)
+                .map(c => parseInt(c.value));
+            updateVisualization();
         });
     });
 
