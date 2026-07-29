@@ -64,7 +64,7 @@ export function mode9_render(container, currentKey = 'C') {
                         <label style="display: block; margin-bottom: 0.4rem; color: var(--text-muted); font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Type</label>
                         <div class="custom-select-wrapper">
                             <select id="voicing-type-select" class="custom-select" style="min-width: 110px;">
-                                ${chordTypes.map(t => `<option value="${t}" ${t === 'Dom7' ? 'selected' : ''}>${t}</option>`).join('')}
+                                ${chordTypes.map(t => `<option value="${t}" ${t === 'Dom7' ? 'selected' : ''}>${t === 'Dom7' ? '7' : t}</option>`).join('')}
                             </select>
                         </div>
                     </div>
