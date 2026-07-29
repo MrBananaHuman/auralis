@@ -25,8 +25,8 @@ export function mode9_render(container, currentKey = 'C') {
         '6': '6', 'm6': 'm6', 'add9': 'add9', '9': '9', 'Maj9': 'maj9', 'Min9': 'm9'
     };
 
-    // 코드 톤 순서(1-3-5-7-9)별 색: root는 골드로 강조
-    const TONE_COLORS = ['#f59e0b', '#6366f1', '#a5b4fc', '#c7d2fe', '#e879f9'];
+    // root는 골드, 나머지 코드 톤은 인디고로 통일
+    const TONE_COLORS = ['#f59e0b', '#6366f1', '#6366f1', '#6366f1', '#6366f1'];
 
     // Drop 보이싱 정의: 줄 세트(낮은 줄→높은 줄, 0=1번줄 ~ 5=6번줄)와
     // 각 전위(inversion)에서 낮은 줄부터 배치되는 코드 톤 인덱스(0=1도, 1=3도, 2=5도, 3=7도)
@@ -90,12 +90,14 @@ export function mode9_render(container, currentKey = 'C') {
                 </div>
 
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.75rem; font-weight: 600;">
-                    ${['Root', '3rd', '5th', '7th', '9th'].map((lbl, i) => `
-                        <div style="display: flex; align-items: center; gap: 0.35rem;">
-                            <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: ${TONE_COLORS[i]}; box-shadow: 0 0 5px ${TONE_COLORS[i]};"></span>
-                            <span style="color: var(--text-muted);">${lbl}</span>
-                        </div>
-                    `).join('')}
+                    <div style="display: flex; align-items: center; gap: 0.35rem;">
+                        <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 5px #f59e0b;"></span>
+                        <span style="color: var(--text-muted);">Root</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.35rem;">
+                        <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #6366f1; box-shadow: 0 0 5px #6366f1;"></span>
+                        <span style="color: var(--text-muted);">Chord Tones</span>
+                    </div>
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 0.6rem;">
