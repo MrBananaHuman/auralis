@@ -199,6 +199,15 @@ export function getChordFormula(type) {
         case 'm7b5': return ['1', 'b3', 'b5', 'b7'];
         case 'Aug7': return ['1', '3', '#5', 'b7'];
         case 'AugMaj7': return ['1', '3', '#5', '7'];
+        case 'Sus4': return ['1', '4', '5'];
+        case 'Sus2': return ['1', '2', '5'];
+        case '6': return ['1', '3', '5', '6'];
+        case 'm6': return ['1', 'b3', '5', '6'];
+        case 'add9': return ['1', '3', '5', '9'];
+        case '9':
+        case 'Dom9': return ['1', '3', '5', 'b7', '9'];
+        case 'Maj9': return ['1', '3', '5', '7', '9'];
+        case 'Min9': return ['1', 'b3', '5', 'b7', '9'];
         default: return ['1', '3', '5'];
     }
 }

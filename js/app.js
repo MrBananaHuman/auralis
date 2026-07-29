@@ -9,6 +9,7 @@ import { mode5_render } from './modes/mode5.js';
 import { mode6_render } from './modes/mode6.js';
 import { mode7_render } from './modes/mode7.js';
 import { mode8_render } from './modes/mode8.js';
+import { mode9_render } from './modes/mode9.js';
 
 let currentKey = 'C';
 let currentMode = 'mode1';
@@ -22,7 +23,8 @@ const modes = {
     'mode5': { title: 'Chord Explorer', description: 'Visualize triads across different string sets to learn their shapes.', render: mode5_render },
     'mode6': { title: 'Fretboard Geometry', description: 'Master the spatial relationships between notes on the neck.', render: mode6_render },
     'mode7': { title: 'Harmony Builder', description: 'Build chord progressions', render: mode7_render },
-    'mode8': { title: 'CAGED System Master', description: 'Visualize the 5 CAGED shapes across the fretboard.', render: mode8_render }
+    'mode8': { title: 'CAGED System Master', description: 'Visualize the 5 CAGED shapes across the fretboard.', render: mode8_render },
+    'mode9': { title: 'Voicing Explorer', description: 'See every playable position for each chord in your progression.', render: mode9_render }
 };
 
 function initApp() {
@@ -89,7 +91,7 @@ function initApp() {
             // Hide global fretboard for modes that render their own custom fretboards
             const globalFretboard = document.querySelector('main > #fretboard-container');
             if (globalFretboard) {
-                if (currentMode === 'mode5' || currentMode === 'mode7' || currentMode === 'mode8') {
+                if (currentMode === 'mode5' || currentMode === 'mode7' || currentMode === 'mode8' || currentMode === 'mode9') {
                     globalFretboard.style.display = 'none';
                 } else {
                     globalFretboard.style.display = 'block';

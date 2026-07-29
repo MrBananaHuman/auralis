@@ -13,6 +13,7 @@ js_files = [
     'js/modes/mode6.js',
     'js/modes/mode7.js',
     'js/modes/mode8.js',
+    'js/modes/mode9.js',
     'js/app.js'
 ]
 
